@@ -1,13 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <POU Name="MAIN" Id="{6fe93612-4e2b-441c-92a1-cb9f7886abad}">
+  <POU Name="MAIN" Id="{6fe93612-4e2b-441c-92a1-cb9f7886abad}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
+    fbReadRegister: FB_MBReadRegs;
+    // Array for Manufacturer and Device strinng
+    aDataCommon: ARRAY [1..32] OF WORD;
+    // Execute rising edge
+    fbRTrig: R_TRIG;
 END_VAR
-]]>
-    </Declaration>
+]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[fbRTrig();
+
+fbReadRegister.bExecute := fbRTrig.Q;
+
+fbReadRegister(
+	sIPAddr:= '127.0.0.1',
+	nTCPPort:= MODBUS_TCP_PORT,
+	nUnitID:= 16#01,
+	nQuantity:= 32,
+	nMBAddr:= 40004,
+	cbLength:= SIZEOF(aDataCommon),
+	pDestAddr:= ADR(aDataCommon),
+	tTimeout:= T#1S);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
