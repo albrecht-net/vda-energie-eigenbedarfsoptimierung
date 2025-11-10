@@ -6,8 +6,15 @@ VAR
     fbReadRegister: FB_MBReadRegs;
     // Array for Manufacturer and Device strinng
     aDataCommon: ARRAY [1..32] OF WORD;
+    // Array for power measurements of inverter
+    aInvMeasurements: ARRAY [1..25] OF WORD;
+    // Array for power measurements of meter
+    aMeterPower: ARRAY [1..2] OF WORD;
     // Execute rising edge
     fbRTrig: R_TRIG;
+    // IP-Adress: 192.168.1.107 (WLAN), 192.168.2.7 (Ethernet)
+    sIPAddr: STRING := '192.168.1.107';
+    nMode: INT := 1;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -15,15 +22,33 @@ END_VAR
 
 fbReadRegister.bExecute := fbRTrig.Q;
 
+CASE nMode OF
+    1: // Manufacturer and Device strinng
+        fbReadRegister.nUnitID := 16#01;
+        fbReadRegister.nQuantity := 32;
+        fbReadRegister.nMBAddr := 40004;
+        fbReadRegister.cbLength := SIZEOF(aDataCommon);
+        fbReadRegister.pDestAddr := ADR(aDataCommon);
+        
+    2: // Current and Power from inverter
+        fbReadRegister.nUnitID := 16#01;
+        fbReadRegister.nQuantity := 25;
+        fbReadRegister.nMBAddr := 40071;
+        fbReadRegister.cbLength := SIZEOF(aInvMeasurements);
+        fbReadRegister.pDestAddr := ADR(aInvMeasurements);
+        
+    3: // AC Power from meter
+        fbReadRegister.nUnitID := 16#C8;
+        fbReadRegister.nQuantity := 2;
+        fbReadRegister.nMBAddr := 40090;
+        fbReadRegister.cbLength := SIZEOF(aMeterPower);
+        fbReadRegister.pDestAddr := ADR(aMeterPower);
+END_CASE
+
 fbReadRegister(
-	sIPAddr:= '127.0.0.1',
-	nTCPPort:= MODBUS_TCP_PORT,
-	nUnitID:= 16#01,
-	nQuantity:= 32,
-	nMBAddr:= 40004,
-	cbLength:= SIZEOF(aDataCommon),
-	pDestAddr:= ADR(aDataCommon),
-	tTimeout:= T#1S);]]></ST>
+	sIPAddr := sIPAddr,
+	nTCPPort := MODBUS_TCP_PORT,
+	tTimeout := T#1S);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
