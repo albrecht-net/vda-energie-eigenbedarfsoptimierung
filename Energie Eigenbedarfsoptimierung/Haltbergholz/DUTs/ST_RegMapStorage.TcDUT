@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_RegMapStorage" Id="{71e32fe8-7d97-476d-b94c-40cf3c24ad65}">
+    <Declaration><![CDATA[TYPE ST_RegMapStorage :
+STRUCT
+    nStateOfCharge: WORD;
+    nStorageAvailable: WORD;
+    nVoltageInternal: WORD;
+    nState: E_StorageChargeState;
+    nSfStateOfCharge: WORD := INT_TO_UINT(-2);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_RegMapMeter" Id="{6b176712-8563-4e03-a983-7848e2e7d1b9}">
+    <Declaration><![CDATA[TYPE ST_RegMapMeter :
+STRUCT
+    nCurrentTotal: WORD;
+    nCurrentL1: WORD;
+    nCurrentL2: WORD;
+    nCurrentL3: WORD;
+    nSfCurrent: WORD;
+    nVoltageLN: WORD;
+    nVoltageL1N: WORD;
+    nVoltageL2N: WORD;
+    nVoltageL3N: WORD;
+    nVoltageLL: WORD;
+    nVoltageL1L2: WORD;
+    nVoltageL2L3: WORD;
+    nVoltageL3L1: WORD;
+    nSfVoltage: WORD;
+    nFrequency: WORD;
+    nSfFrequency: WORD;
+    nPower: WORD;
+    nPowerL1: WORD;
+    nPowerL2: WORD;
+    nPowerL3: WORD;
+    nSfPower: WORD;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

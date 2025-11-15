@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_RegMapInverter" Id="{66fbb8e0-a2bf-4c31-99b6-30a68e527444}">
+    <Declaration><![CDATA[TYPE ST_RegMapInverter :
+STRUCT
+    nCurrentTotal: WORD;
+    nCurrentL1: WORD;
+    nCurrentL2: WORD;
+    nCurrentL3: WORD;
+    nSfCurrent: WORD;
+    nVoltageL1L2: WORD;
+    nVoltageL2L3: WORD;
+    nVoltageL3L1: WORD;
+    nVoltageL1N: WORD;
+    nVoltageL2N: WORD;
+    nVoltageL3N: WORD;
+    nSfVoltage: WORD;
+    nPower: WORD;
+    nSfPower: WORD;
+    nFrequency: WORD;
+    nSfFrequency: WORD;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
