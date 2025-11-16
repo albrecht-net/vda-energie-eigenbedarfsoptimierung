@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_ModbusCon" Id="{43065017-eb91-4d51-b9c6-b54abe313361}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ModbusCon
+VAR
+    // Modbus connection to read registers
+    fbReadRegister: FB_MBReadRegs;
+    // Timeout between requests
+    fbReqTimeout: TON := (PT := T#2S);
+    
+    tConnectionTimeout: TIME := T#5S;
+    
+    // Register data of inverter
+    stInverterData: ST_RegMapInverter;
+    // Register data of meter
+    stMeterData: ST_RegMapMeter;
+    // Register data of storage
+    stStorageData: ST_RegMapStorage;
+    
+    // Select subsystem for request to prevent parallel requests
+    eCurrentSubsystem: (INVERTER, METER, STORAGE) := INVERTER;
+    
+    // Update output after modbus read
+    fbUpdateOutput: F_TRIG;
+END_VAR
+VAR CONSTANT
+    sInverterIPAddr: STRING := '192.168.1.107';
+    nInverterTCPPort: UINT := MODBUS_TCP_PORT;
+    nInverterUnitID: BYTE := 16#01;
+    nMeterUnitID: BYTE := 16#C8;
+    
+    nInverterRegQuantity: WORD := 16;
+    nInverterMBStartAddr: WORD := 40071;
+    nMeterRegQuantity: WORD := 21;
+    nMeterMBStartAddr: WORD := 40071;
+    nStorageRegQuantity: WORD := 4;
+    nStorageMBStartAddr: WORD := 40351;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbReadRegister(sIPAddr := sInverterIPAddr, nTCPPort := nInverterTCPPort, tTimeout := tConnectionTimeout);
+fbUpdateOutput(CLK := fbReadRegister.bBusy);
+
+IF fbReadRegister.bError THEN
+    (* do error handling *)
+END_IF
+
+CASE eCurrentSubsystem OF
+    INVERTER:
+        fbReadRegister.nUnitID := nInverterUnitID;
+        fbReadRegister.nQuantity := nInverterRegQuantity;
+        fbReadRegister.nMBAddr := nInverterMBStartAddr;
+        fbReadRegister.cbLength := SIZEOF(stInverterData);
+        fbReadRegister.pDestAddr := ADR(stInverterData);
+        
+    METER:
+        fbReadRegister.nUnitID := nMeterUnitID;
+        fbReadRegister.nQuantity := nMeterRegQuantity;
+        fbReadRegister.nMBAddr := nMeterMBStartAddr;
+        fbReadRegister.cbLength := SIZEOF(stMeterData);
+        fbReadRegister.pDestAddr := ADR(stMeterData);
+        
+    STORAGE:
+        fbReadRegister.nUnitID := nInverterUnitID;
+        fbReadRegister.nQuantity := nStorageRegQuantity;
+        fbReadRegister.nMBAddr := nStorageMBStartAddr;
+        fbReadRegister.cbLength := SIZEOF(stStorageData);
+        fbReadRegister.pDestAddr := ADR(stStorageData);
+        
+END_CASE]]></ST>
+    </Implementation>
+    <Method Name="scale" Id="{42cdecb6-346c-42d7-8d00-085967a56f85}">
+      <Declaration><![CDATA[METHOD PROTECTED scale : REAL
+VAR_INPUT
+    nValue: WORD;
+    nScaleFactor: WORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[scale := nValue * LREAL_TO_REAL(EXPT(10, UINT_TO_INT(nScaleFactor)));
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
