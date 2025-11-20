@@ -2,33 +2,40 @@
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_ModbusCon" Id="{43065017-eb91-4d51-b9c6-b54abe313361}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_ModbusCon
+VAR_INPUT
+    sInverterIPAddr: STRING := '127.0.0.1';
+    nInverterTCPPort: UINT := 5502;
+    nInverterUnitID: BYTE := 16#01;
+    nMeterUnitID: BYTE := 16#C8;
+    tConnectionTimeout: TIME := T#10S;
+    tConnectionCoolDown: TIME := T#10S;
+    bEnable: BOOL;
+END_VAR
+VAR_OUTPUT
+    bError: BOOL;
+    stInverter: ST_OpDataInverter;
+    stMeter: ST_OpDataMeter;
+    stStorage: ST_OpDataStorage;
+END_VAR
 VAR
     // Modbus connection to read registers
     fbReadRegister: FB_MBReadRegs;
-    // Timeout between requests
-    fbReqTimeout: TON := (PT := T#2S);
-    
-    tConnectionTimeout: TIME := T#5S;
-    
+    // Connection cooldown timeout between requests
+    fbConCoolDown: TOF;
+
     // Register data of inverter
-    stInverterData: ST_RegMapInverter;
+    stInverterRegisterData: ST_RegMapInverter;
     // Register data of meter
-    stMeterData: ST_RegMapMeter;
+    stMeterRegisterData: ST_RegMapMeter;
     // Register data of storage
-    stStorageData: ST_RegMapStorage;
-    
+    stStorageRegisterData: ST_RegMapStorage;
+
+    // Current state of modbus read registers
+    eReadState: (WAIT_FOR_ENABLE, PREPARE_READ_REGS, EXECUTE_READ_REGS, WAIT_READ_REGS_FEEDBACK, ASSIGN_VALUES, SELECT_NEXT_SUBSYTEM, CON_COOL_DOWN);
     // Select subsystem for request to prevent parallel requests
-    eCurrentSubsystem: (INVERTER, METER, STORAGE) := INVERTER;
-    
-    // Update output after modbus read
-    fbUpdateOutput: F_TRIG;
+    eCurrentSubsystem: (INVERTER, METER, STORAGE);
 END_VAR
 VAR CONSTANT
-    sInverterIPAddr: STRING := '192.168.1.107';
-    nInverterTCPPort: UINT := MODBUS_TCP_PORT;
-    nInverterUnitID: BYTE := 16#01;
-    nMeterUnitID: BYTE := 16#C8;
-    
     nInverterRegQuantity: WORD := 16;
     nInverterMBStartAddr: WORD := 40071;
     nMeterRegQuantity: WORD := 21;
@@ -39,38 +46,124 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[fbReadRegister(sIPAddr := sInverterIPAddr, nTCPPort := nInverterTCPPort, tTimeout := tConnectionTimeout);
-fbUpdateOutput(CLK := fbReadRegister.bBusy);
+fbConCoolDown(PT := tConnectionCoolDown);
 
 IF fbReadRegister.bError THEN
     (* do error handling *)
 END_IF
 
-CASE eCurrentSubsystem OF
-    INVERTER:
-        fbReadRegister.nUnitID := nInverterUnitID;
-        fbReadRegister.nQuantity := nInverterRegQuantity;
-        fbReadRegister.nMBAddr := nInverterMBStartAddr;
-        fbReadRegister.cbLength := SIZEOF(stInverterData);
-        fbReadRegister.pDestAddr := ADR(stInverterData);
-        
-    METER:
-        fbReadRegister.nUnitID := nMeterUnitID;
-        fbReadRegister.nQuantity := nMeterRegQuantity;
-        fbReadRegister.nMBAddr := nMeterMBStartAddr;
-        fbReadRegister.cbLength := SIZEOF(stMeterData);
-        fbReadRegister.pDestAddr := ADR(stMeterData);
-        
-    STORAGE:
-        fbReadRegister.nUnitID := nInverterUnitID;
-        fbReadRegister.nQuantity := nStorageRegQuantity;
-        fbReadRegister.nMBAddr := nStorageMBStartAddr;
-        fbReadRegister.cbLength := SIZEOF(stStorageData);
-        fbReadRegister.pDestAddr := ADR(stStorageData);
-        
-END_CASE]]></ST>
+CASE eReadState OF
+    WAIT_FOR_ENABLE:
+        IF bEnable AND fbConCoolDown.Q THEN
+            eReadState := CON_COOL_DOWN;
+        ELSIF bEnable THEN
+            eReadState := PREPARE_READ_REGS;
+        END_IF
+
+    PREPARE_READ_REGS:
+        CASE eCurrentSubsystem OF
+            INVERTER:
+                fbReadRegister.nUnitID := nInverterUnitID;
+                fbReadRegister.nQuantity := nInverterRegQuantity;
+                fbReadRegister.nMBAddr := nInverterMBStartAddr;
+                fbReadRegister.cbLength := SIZEOF(stInverterRegisterData);
+                fbReadRegister.pDestAddr := ADR(stInverterRegisterData);
+
+            METER:
+                fbReadRegister.nUnitID := nMeterUnitID;
+                fbReadRegister.nQuantity := nMeterRegQuantity;
+                fbReadRegister.nMBAddr := nMeterMBStartAddr;
+                fbReadRegister.cbLength := SIZEOF(stMeterRegisterData);
+                fbReadRegister.pDestAddr := ADR(stMeterRegisterData);
+
+            STORAGE:
+                fbReadRegister.nUnitID := nInverterUnitID;
+                fbReadRegister.nQuantity := nStorageRegQuantity;
+                fbReadRegister.nMBAddr := nStorageMBStartAddr;
+                fbReadRegister.cbLength := SIZEOF(stStorageRegisterData);
+                fbReadRegister.pDestAddr := ADR(stStorageRegisterData);
+        END_CASE
+
+        eReadState := EXECUTE_READ_REGS;
+
+    EXECUTE_READ_REGS:
+        fbReadRegister.bExecute := TRUE;
+        fbConCoolDown.IN := TRUE;
+        eReadState := WAIT_READ_REGS_FEEDBACK;
+
+    WAIT_READ_REGS_FEEDBACK:
+        fbReadRegister.bExecute := FALSE;
+        IF NOT fbReadRegister.bBusy THEN
+            fbConCoolDown.IN := FALSE;
+            eReadState := ASSIGN_VALUES;
+        END_IF
+
+    ASSIGN_VALUES:
+        CASE eCurrentSubsystem OF
+            INVERTER:
+                stInverter.fCurrentL1 := scale(stInverterRegisterData.nCurrentL1, stInverterRegisterData.nSfCurrent);
+                stInverter.fCurrentL2 := scale(stInverterRegisterData.nCurrentL2, stInverterRegisterData.nSfCurrent);
+                stInverter.fCurrentL3 := scale(stInverterRegisterData.nCurrentL3, stInverterRegisterData.nSfCurrent);
+                stInverter.fVoltageL1L2 := scale(stInverterRegisterData.nVoltageL1L2, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL2L3 := scale(stInverterRegisterData.nVoltageL2L3, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL3L1 := scale(stInverterRegisterData.nVoltageL3L1, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL1N := scale(stInverterRegisterData.nVoltageL1N, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL2N := scale(stInverterRegisterData.nVoltageL2N, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL3N := scale(stInverterRegisterData.nVoltageL3N, stInverterRegisterData.nSfVoltage);
+                stInverter.fPower := scale(stInverterRegisterData.nPower, stInverterRegisterData.nSfPower);
+                stInverter.fFrequency := scale(stInverterRegisterData.nFrequency, stInverterRegisterData.nSfFrequency);
+
+            METER:
+                stMeter.fCurrentL1 := scale(stMeterRegisterData.nCurrentL1, stMeterRegisterData.nSfCurrent);
+                stMeter.fCurrentL2 := scale(stMeterRegisterData.nCurrentL2, stMeterRegisterData.nSfCurrent);
+                stMeter.fCurrentL3 := scale(stMeterRegisterData.nCurrentL3, stMeterRegisterData.nSfCurrent);
+                stMeter.fVoltageL1L2 := scale(stMeterRegisterData.nVoltageL1L2, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL2L3 := scale(stMeterRegisterData.nVoltageL2L3, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL3L1 := scale(stMeterRegisterData.nVoltageL3L1, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL1N := scale(stMeterRegisterData.nVoltageL1N, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL2N := scale(stMeterRegisterData.nVoltageL2N, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL3N := scale(stMeterRegisterData.nVoltageL3N, stMeterRegisterData.nSfVoltage);
+                stMeter.fPower := scale(stMeterRegisterData.nPower, stMeterRegisterData.nSfPower);
+                stMeter.fPowerL1 := scale(stMeterRegisterData.nPowerL1, stMeterRegisterData.nSfPower);
+                stMeter.fPowerL2 := scale(stMeterRegisterData.nPowerL2, stMeterRegisterData.nSfPower);
+                stMeter.fPowerL3 := scale(stMeterRegisterData.nPowerL3, stMeterRegisterData.nSfPower);
+                stMeter.fFrequency := scale(stMeterRegisterData.nFrequency, stMeterRegisterData.nSfFrequency);
+
+            STORAGE:
+                stStorage.nStateOfCharge := REAL_TO_INT(scale(stStorageRegisterData.nStateOfCharge, stStorageRegisterData.nSfStateOfCharge));
+                stStorage.eState := stStorageRegisterData.nState;
+        END_CASE
+        eReadState := SELECT_NEXT_SUBSYTEM;
+
+    SELECT_NEXT_SUBSYTEM:
+        CASE eCurrentSubsystem OF
+            INVERTER:
+                eCurrentSubsystem := METER;
+
+            METER:
+                eCurrentSubsystem := STORAGE;
+
+            STORAGE:
+                eCurrentSubsystem := INVERTER;
+
+            ELSE
+                eCurrentSubsystem := INVERTER;
+        END_CASE
+        eReadState := CON_COOL_DOWN;
+
+    CON_COOL_DOWN:
+        IF NOT bEnable THEN
+            eReadState := WAIT_FOR_ENABLE;
+        END_IF
+
+        IF NOT fbConCoolDown.Q THEN
+            eReadState := PREPARE_READ_REGS;
+        END_IF
+END_CASE
+]]></ST>
     </Implementation>
     <Method Name="scale" Id="{42cdecb6-346c-42d7-8d00-085967a56f85}">
-      <Declaration><![CDATA[METHOD PROTECTED scale : REAL
+      <Declaration><![CDATA[METHOD PRIVATE scale : REAL
 VAR_INPUT
     nValue: WORD;
     nScaleFactor: WORD;
