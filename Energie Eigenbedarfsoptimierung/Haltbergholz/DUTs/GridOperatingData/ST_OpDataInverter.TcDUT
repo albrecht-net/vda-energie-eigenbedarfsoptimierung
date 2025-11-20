@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_OpDataInverter" Id="{9b9ddeb3-89d4-4db1-b6c6-92d6b6b1e80c}">
+    <Declaration><![CDATA[TYPE ST_OpDataInverter :
+STRUCT
+    fCurrentL1: REAL;
+    fCurrentL2: REAL;
+    fCurrentL3: REAL;
+    fVoltageL1L2: REAL;
+    fVoltageL2L3: REAL;
+    fVoltageL3L1: REAL;
+    fVoltageL1N: REAL;
+    fVoltageL2N: REAL;
+    fVoltageL3N: REAL;
+    fPower: REAL;
+    fFrequency: REAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

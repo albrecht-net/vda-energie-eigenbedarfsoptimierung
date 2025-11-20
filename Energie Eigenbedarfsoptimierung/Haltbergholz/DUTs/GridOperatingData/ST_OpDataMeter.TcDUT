@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_OpDataMeter" Id="{72112f1d-8804-4a9b-bc1b-4993bae1df93}">
+    <Declaration><![CDATA[TYPE ST_OpDataMeter :
+STRUCT
+    fCurrentL1: REAL;
+    fCurrentL2: REAL;
+    fCurrentL3: REAL;
+    fVoltageL1L2: REAL;
+    fVoltageL2L3: REAL;
+    fVoltageL3L1: REAL;
+    fVoltageL1N: REAL;
+    fVoltageL2N: REAL;
+    fVoltageL3N: REAL;
+    fPower: REAL;
+    fPowerL1: REAL;
+    fPowerL2: REAL;
+    fPowerL3: REAL;
+    fFrequency: REAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
