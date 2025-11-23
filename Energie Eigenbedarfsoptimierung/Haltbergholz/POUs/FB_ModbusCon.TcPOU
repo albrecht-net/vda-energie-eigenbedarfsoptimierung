@@ -6,8 +6,11 @@ VAR_INPUT
     bEnable: BOOL;
 END_VAR
 VAR_OUTPUT
+    // Operating data from inverter
     stInverter: ST_OpDataInverter;
+    // Operating data from meter
     stMeter: ST_OpDataMeter;
+    // Operating data from storage
     stStorage: ST_OpDataStorage;
 END_VAR
 VAR
@@ -115,36 +118,36 @@ CASE eReadState OF
     ASSIGN_VALUES:
         CASE eCurrentSubsystem OF
             INVERTER:
-                stInverter.fCurrentL1 := scale(stInverterRegisterData.nCurrentL1, stInverterRegisterData.nSfCurrent);
-                stInverter.fCurrentL2 := scale(stInverterRegisterData.nCurrentL2, stInverterRegisterData.nSfCurrent);
-                stInverter.fCurrentL3 := scale(stInverterRegisterData.nCurrentL3, stInverterRegisterData.nSfCurrent);
-                stInverter.fVoltageL1L2 := scale(stInverterRegisterData.nVoltageL1L2, stInverterRegisterData.nSfVoltage);
-                stInverter.fVoltageL2L3 := scale(stInverterRegisterData.nVoltageL2L3, stInverterRegisterData.nSfVoltage);
-                stInverter.fVoltageL3L1 := scale(stInverterRegisterData.nVoltageL3L1, stInverterRegisterData.nSfVoltage);
-                stInverter.fVoltageL1N := scale(stInverterRegisterData.nVoltageL1N, stInverterRegisterData.nSfVoltage);
-                stInverter.fVoltageL2N := scale(stInverterRegisterData.nVoltageL2N, stInverterRegisterData.nSfVoltage);
-                stInverter.fVoltageL3N := scale(stInverterRegisterData.nVoltageL3N, stInverterRegisterData.nSfVoltage);
-                stInverter.fPower := scale(stInverterRegisterData.nPower, stInverterRegisterData.nSfPower);
-                stInverter.fFrequency := scale(stInverterRegisterData.nFrequency, stInverterRegisterData.nSfFrequency);
+                stInverter.fCurrentL1 := Scale(stInverterRegisterData.nCurrentL1, stInverterRegisterData.nSfCurrent);
+                stInverter.fCurrentL2 := Scale(stInverterRegisterData.nCurrentL2, stInverterRegisterData.nSfCurrent);
+                stInverter.fCurrentL3 := Scale(stInverterRegisterData.nCurrentL3, stInverterRegisterData.nSfCurrent);
+                stInverter.fVoltageL1L2 := Scale(stInverterRegisterData.nVoltageL1L2, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL2L3 := Scale(stInverterRegisterData.nVoltageL2L3, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL3L1 := Scale(stInverterRegisterData.nVoltageL3L1, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL1N := Scale(stInverterRegisterData.nVoltageL1N, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL2N := Scale(stInverterRegisterData.nVoltageL2N, stInverterRegisterData.nSfVoltage);
+                stInverter.fVoltageL3N := Scale(stInverterRegisterData.nVoltageL3N, stInverterRegisterData.nSfVoltage);
+                stInverter.fPower := Scale(stInverterRegisterData.nPower, stInverterRegisterData.nSfPower);
+                stInverter.fFrequency := Scale(stInverterRegisterData.nFrequency, stInverterRegisterData.nSfFrequency);
 
             METER:
-                stMeter.fCurrentL1 := scale(stMeterRegisterData.nCurrentL1, stMeterRegisterData.nSfCurrent);
-                stMeter.fCurrentL2 := scale(stMeterRegisterData.nCurrentL2, stMeterRegisterData.nSfCurrent);
-                stMeter.fCurrentL3 := scale(stMeterRegisterData.nCurrentL3, stMeterRegisterData.nSfCurrent);
-                stMeter.fVoltageL1L2 := scale(stMeterRegisterData.nVoltageL1L2, stMeterRegisterData.nSfVoltage);
-                stMeter.fVoltageL2L3 := scale(stMeterRegisterData.nVoltageL2L3, stMeterRegisterData.nSfVoltage);
-                stMeter.fVoltageL3L1 := scale(stMeterRegisterData.nVoltageL3L1, stMeterRegisterData.nSfVoltage);
-                stMeter.fVoltageL1N := scale(stMeterRegisterData.nVoltageL1N, stMeterRegisterData.nSfVoltage);
-                stMeter.fVoltageL2N := scale(stMeterRegisterData.nVoltageL2N, stMeterRegisterData.nSfVoltage);
-                stMeter.fVoltageL3N := scale(stMeterRegisterData.nVoltageL3N, stMeterRegisterData.nSfVoltage);
-                stMeter.fPower := scale(stMeterRegisterData.nPower, stMeterRegisterData.nSfPower);
-                stMeter.fPowerL1 := scale(stMeterRegisterData.nPowerL1, stMeterRegisterData.nSfPower);
-                stMeter.fPowerL2 := scale(stMeterRegisterData.nPowerL2, stMeterRegisterData.nSfPower);
-                stMeter.fPowerL3 := scale(stMeterRegisterData.nPowerL3, stMeterRegisterData.nSfPower);
-                stMeter.fFrequency := scale(stMeterRegisterData.nFrequency, stMeterRegisterData.nSfFrequency);
+                stMeter.fCurrentL1 := Scale(stMeterRegisterData.nCurrentL1, stMeterRegisterData.nSfCurrent);
+                stMeter.fCurrentL2 := Scale(stMeterRegisterData.nCurrentL2, stMeterRegisterData.nSfCurrent);
+                stMeter.fCurrentL3 := Scale(stMeterRegisterData.nCurrentL3, stMeterRegisterData.nSfCurrent);
+                stMeter.fVoltageL1L2 := Scale(stMeterRegisterData.nVoltageL1L2, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL2L3 := Scale(stMeterRegisterData.nVoltageL2L3, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL3L1 := Scale(stMeterRegisterData.nVoltageL3L1, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL1N := Scale(stMeterRegisterData.nVoltageL1N, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL2N := Scale(stMeterRegisterData.nVoltageL2N, stMeterRegisterData.nSfVoltage);
+                stMeter.fVoltageL3N := Scale(stMeterRegisterData.nVoltageL3N, stMeterRegisterData.nSfVoltage);
+                stMeter.fPower := Scale(stMeterRegisterData.nPower, stMeterRegisterData.nSfPower);
+                stMeter.fPowerL1 := Scale(stMeterRegisterData.nPowerL1, stMeterRegisterData.nSfPower);
+                stMeter.fPowerL2 := Scale(stMeterRegisterData.nPowerL2, stMeterRegisterData.nSfPower);
+                stMeter.fPowerL3 := Scale(stMeterRegisterData.nPowerL3, stMeterRegisterData.nSfPower);
+                stMeter.fFrequency := Scale(stMeterRegisterData.nFrequency, stMeterRegisterData.nSfFrequency);
 
             STORAGE:
-                stStorage.nStateOfCharge := REAL_TO_INT(scale(stStorageRegisterData.nStateOfCharge, stStorageRegisterData.nSfStateOfCharge));
+                stStorage.nStateOfCharge := REAL_TO_INT(Scale(stStorageRegisterData.nStateOfCharge, stStorageRegisterData.nSfStateOfCharge));
                 stStorage.eState := stStorageRegisterData.nState;
         END_CASE
         eReadState := SELECT_NEXT_SUBSYTEM;
@@ -244,12 +247,18 @@ VAR_INPUT
     // TRUE: the retain variables are initialized (reset warm / reset cold)
     bInitRetains: BOOL;
     // TRUE: the instance will be copied to the copy code afterward (online change)
-    bInCopyCode: BOOL; 
+    bInCopyCode: BOOL;
+    // IP address of the target device
     sInverterIPAddr: STRING;
+    // Port number of the target device
     nInverterTCPPort: UINT;
+    // Modbus RTU ID of inverter, value must be 16#FF if addressed directly via TCP/IP
     nInverterUnitID: BYTE;
+    // Modbus RTU ID of meter, value must be 16#FF if addressed directly via TCP/IP
     nMeterUnitID: BYTE;
+    // Timeout that may not be exceeded by execution of the ADS command
     tConnectionTimeout: TIME;
+    // Timeout between modbus commands sent to target device
     tConnectionCoolDown: TIME;
 END_VAR]]></Declaration>
       <Implementation>
@@ -280,15 +289,15 @@ nConnectionCountermeasure := 0;
 eReadState := WAIT_FOR_ENABLE;]]></ST>
       </Implementation>
     </Method>
-    <Method Name="scale" Id="{42cdecb6-346c-42d7-8d00-085967a56f85}">
-      <Declaration><![CDATA[METHOD PRIVATE scale : REAL
+    <Method Name="Scale" Id="{42cdecb6-346c-42d7-8d00-085967a56f85}">
+      <Declaration><![CDATA[METHOD PRIVATE Scale : REAL
 VAR_INPUT
     nValue: WORD;
     nScaleFactor: WORD;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[scale := nValue * LREAL_TO_REAL(EXPT(10, UINT_TO_INT(nScaleFactor)));
+        <ST><![CDATA[Scale := nValue * LREAL_TO_REAL(EXPT(10, UINT_TO_INT(nScaleFactor)));
 ]]></ST>
       </Implementation>
     </Method>
