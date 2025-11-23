@@ -3,25 +3,25 @@
   <POU Name="FB_ModbusCon" Id="{43065017-eb91-4d51-b9c6-b54abe313361}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_ModbusCon
 VAR_INPUT
-    sInverterIPAddr: STRING := '127.0.0.1';
-    nInverterTCPPort: UINT := 5502;
-    nInverterUnitID: BYTE := 16#01;
-    nMeterUnitID: BYTE := 16#C8;
-    tConnectionTimeout: TIME := T#10S;
-    tConnectionCoolDown: TIME := T#10S;
     bEnable: BOOL;
 END_VAR
 VAR_OUTPUT
-    bError: BOOL;
     stInverter: ST_OpDataInverter;
     stMeter: ST_OpDataMeter;
     stStorage: ST_OpDataStorage;
 END_VAR
 VAR
+    _sInverterIPAddr: STRING;
+    _nInverterTCPPort: UINT;
+    _nInverterUnitID: BYTE;
+    _nMeterUnitID: BYTE;
+    _tConnectionTimeout: TIME;
+    _tConnectionCoolDown: TIME;
+
     // Modbus connection to read registers
     fbReadRegister: FB_MBReadRegs;
     // Connection cooldown timeout between requests
-    fbConCoolDown: TOF;
+    fbConnectionCoolDown: TOF;
 
     // Register data of inverter
     stInverterRegisterData: ST_RegMapInverter;
@@ -30,8 +30,17 @@ VAR
     // Register data of storage
     stStorageRegisterData: ST_RegMapStorage;
 
+    // Number of current tried countermeasures after modbus connection error
+    nConnectionCountermeasure: INT;
+    // Number of current tried countermeasures after modbus request error regarding inverter
+    nInverterCountermeasure: INT;
+    // Number of current tried countermeasures after modbus request error regarding meter
+    nMeterCountermeasure: INT;
+    // Number of current tried countermeasures after modbus request error regarding storage
+    nStorageCountermeasure: INT;
+
     // Current state of modbus read registers
-    eReadState: (WAIT_FOR_ENABLE, PREPARE_READ_REGS, EXECUTE_READ_REGS, WAIT_READ_REGS_FEEDBACK, ASSIGN_VALUES, SELECT_NEXT_SUBSYTEM, CON_COOL_DOWN);
+    eReadState: (WAIT_FOR_ENABLE, PREPARE_READ_REGS, EXECUTE_READ_REGS, WAIT_READ_REGS_FEEDBACK, ASSIGN_VALUES, SELECT_NEXT_SUBSYTEM, CON_COOL_DOWN, CON_LOCKOUT);
     // Select subsystem for request to prevent parallel requests
     eCurrentSubsystem: (INVERTER, METER, STORAGE);
 END_VAR
@@ -42,19 +51,17 @@ VAR CONSTANT
     nMeterMBStartAddr: WORD := 40071;
     nStorageRegQuantity: WORD := 4;
     nStorageMBStartAddr: WORD := 40351;
+    nConnectionCmBeforeLockout: INT := 5;
+    nSubsystemCmBeforeLockout: INT := 2;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[fbReadRegister(sIPAddr := sInverterIPAddr, nTCPPort := nInverterTCPPort, tTimeout := tConnectionTimeout);
-fbConCoolDown(PT := tConnectionCoolDown);
-
-IF fbReadRegister.bError THEN
-    (* do error handling *)
-END_IF
+      <ST><![CDATA[fbReadRegister(sIPAddr := _sInverterIPAddr, nTCPPort := _nInverterTCPPort, tTimeout := _tConnectionTimeout);
+fbConnectionCoolDown();
 
 CASE eReadState OF
     WAIT_FOR_ENABLE:
-        IF bEnable AND fbConCoolDown.Q THEN
+        IF bEnable AND fbConnectionCoolDown.Q THEN
             eReadState := CON_COOL_DOWN;
         ELSIF bEnable THEN
             eReadState := PREPARE_READ_REGS;
@@ -63,21 +70,21 @@ CASE eReadState OF
     PREPARE_READ_REGS:
         CASE eCurrentSubsystem OF
             INVERTER:
-                fbReadRegister.nUnitID := nInverterUnitID;
+                fbReadRegister.nUnitID := _nInverterUnitID;
                 fbReadRegister.nQuantity := nInverterRegQuantity;
                 fbReadRegister.nMBAddr := nInverterMBStartAddr;
                 fbReadRegister.cbLength := SIZEOF(stInverterRegisterData);
                 fbReadRegister.pDestAddr := ADR(stInverterRegisterData);
 
             METER:
-                fbReadRegister.nUnitID := nMeterUnitID;
+                fbReadRegister.nUnitID := _nMeterUnitID;
                 fbReadRegister.nQuantity := nMeterRegQuantity;
                 fbReadRegister.nMBAddr := nMeterMBStartAddr;
                 fbReadRegister.cbLength := SIZEOF(stMeterRegisterData);
                 fbReadRegister.pDestAddr := ADR(stMeterRegisterData);
 
             STORAGE:
-                fbReadRegister.nUnitID := nInverterUnitID;
+                fbReadRegister.nUnitID := _nInverterUnitID;
                 fbReadRegister.nQuantity := nStorageRegQuantity;
                 fbReadRegister.nMBAddr := nStorageMBStartAddr;
                 fbReadRegister.cbLength := SIZEOF(stStorageRegisterData);
@@ -88,14 +95,21 @@ CASE eReadState OF
 
     EXECUTE_READ_REGS:
         fbReadRegister.bExecute := TRUE;
-        fbConCoolDown.IN := TRUE;
+        fbConnectionCoolDown.IN := TRUE;
         eReadState := WAIT_READ_REGS_FEEDBACK;
 
     WAIT_READ_REGS_FEEDBACK:
         fbReadRegister.bExecute := FALSE;
         IF NOT fbReadRegister.bBusy THEN
-            fbConCoolDown.IN := FALSE;
-            eReadState := ASSIGN_VALUES;
+            fbConnectionCoolDown.IN := FALSE;
+            ConnectionErrorHandler();
+
+            IF ConnectionLockoutIsActive() THEN
+                // Lockout modbus connection
+                eReadState := CON_LOCKOUT;
+            ELSE
+                eReadState := ASSIGN_VALUES;
+            END_IF
         END_IF
 
     ASSIGN_VALUES:
@@ -156,12 +170,116 @@ CASE eReadState OF
             eReadState := WAIT_FOR_ENABLE;
         END_IF
 
-        IF NOT fbConCoolDown.Q THEN
+        IF NOT fbConnectionCoolDown.Q THEN
             eReadState := PREPARE_READ_REGS;
         END_IF
+
+    CON_LOCKOUT:
+        (* Perform reset using Reset() function *)
 END_CASE
 ]]></ST>
     </Implementation>
+    <Method Name="ConnectionErrorHandler" Id="{eb35efc9-f4bd-48ca-9579-f04d9ee594f3}">
+      <Declaration><![CDATA[METHOD PRIVATE ConnectionErrorHandler
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF ConnectionLockoutIsActive() THEN
+    RETURN;
+END_IF
+
+IF fbReadRegister.bError THEN
+    // Apply countermeasure if ADS error occured
+    CASE fbReadRegister.nErrId OF
+        16#8001, // Modbus function not implemented
+        16#8002, // Invalid address or length
+        16#8003: // Invalid parameters: incorrect number of registers
+            CASE eCurrentSubsystem OF
+                INVERTER:
+                    fbInverterCountermeasure.CU := TRUE;
+                    nInverterCountermeasure := nInverterCountermeasure + 1;
+                METER:
+                    fbMeterCountermeasure.CU := TRUE;
+                    nMeterCountermeasure := nMeterCountermeasure + 1;
+                STORAGE:
+                    fbStorageCountermeasure.CU := TRUE;
+                    nStorageCountermeasure := nStorageCountermeasure + 1;
+            END_CASE
+    
+        16#8004,                                  // Modbus server error
+        Global.E_TcSystemEventClass.TCPSendError, // TCP send error
+        Tc2_System.E_AdsErr.CLIENT_SYNCTIMEOUT:   // Remote terminal is not responding in the specified ADS timeout
+            fbConnectionCountermeasure.CU := TRUE;
+            nConnectionCountermeasure := nConnectionCountermeasure + 1;
+            fbConnectionCoolDown.PT := _tConnectionCoolDown + _tConnectionCoolDown * LREAL_TO_INT(EXPT(nConnectionCountermeasure, 2));
+    END_CASE
+
+ELSE
+    // Defer possibly still active countermeasure
+    nInverterCountermeasure := 0;
+    nMeterCountermeasure := 0;
+    nStorageCountermeasure := 0;
+    nConnectionCountermeasure := 0;
+
+    // Reset connection cooldown timeout
+    fbConnectionCoolDown.PT := _tConnectionCoolDown;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ConnectionLockoutIsActive" Id="{bf05b0a2-a100-4785-9923-1a19614766ee}">
+      <Declaration><![CDATA[METHOD PUBLIC ConnectionLockoutIsActive : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nConnectionCountermeasure > nConnectionCmBeforeLockout OR nInverterCountermeasure > nSubsystemCmBeforeLockout OR nMeterCountermeasure > nSubsystemCmBeforeLockout OR nStorageCountermeasure > nSubsystemCmBeforeLockout OR eReadState = CON_LOCKOUT THEN
+    ConnectionLockoutIsActive := TRUE;
+ELSE
+    ConnectionLockoutIsActive := FALSE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FB_Init" Id="{7814f5ef-9eb8-4cfe-966e-9c0030c1cf2b}">
+      <Declaration><![CDATA[METHOD FB_Init: BOOL
+VAR_INPUT
+    // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInitRetains: BOOL;
+    // TRUE: the instance will be copied to the copy code afterward (online change)
+    bInCopyCode: BOOL; 
+    sInverterIPAddr: STRING;
+    nInverterTCPPort: UINT;
+    nInverterUnitID: BYTE;
+    nMeterUnitID: BYTE;
+    tConnectionTimeout: TIME;
+    tConnectionCoolDown: TIME;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Assign connection parameters
+_sInverterIPAddr := sInverterIPAddr;
+_nInverterTCPPort := nInverterTCPPort;
+_nInverterUnitID := nInverterUnitID;
+_nMeterUnitID := nMeterUnitID;
+_tConnectionTimeout := tConnectionTimeout;
+_tConnectionCoolDown := tConnectionCoolDown;
+
+// Initialize connection cooldown timeout
+IF bInitRetains THEN
+    fbConnectionCoolDown.PT := tConnectionCoolDown;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Reset" Id="{dcc751c1-95e6-4506-87cb-37fdf657bcaf}">
+      <Declaration><![CDATA[METHOD PUBLIC Reset
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nInverterCountermeasure := 0;
+nMeterCountermeasure := 0;
+nStorageCountermeasure := 0;
+nConnectionCountermeasure := 0;
+
+eReadState := WAIT_FOR_ENABLE;]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="scale" Id="{42cdecb6-346c-42d7-8d00-085967a56f85}">
       <Declaration><![CDATA[METHOD PRIVATE scale : REAL
 VAR_INPUT
