@@ -3,16 +3,27 @@
   <DUT Name="ST_OpDataInverter" Id="{9b9ddeb3-89d4-4db1-b6c6-92d6b6b1e80c}">
     <Declaration><![CDATA[TYPE ST_OpDataInverter :
 STRUCT
+    // Current Phase L1 [A]
     fCurrentL1: REAL;
+    // Current Phase L2 [A]
     fCurrentL2: REAL;
+    // Current Phase L3 [A]
     fCurrentL3: REAL;
+    // Voltage between Phase L1 and L2 [V]
     fVoltageL1L2: REAL;
+    // Voltage between Phase L2 and L3 [V]
     fVoltageL2L3: REAL;
+    // Voltage between Phase L3 and L1 [V]
     fVoltageL3L1: REAL;
+    // Voltage between Phase L1 and N [V]
     fVoltageL1N: REAL;
+    // Voltage between Phase L2 and N [V]
     fVoltageL2N: REAL;
+    // Voltage between Phase L3 and N [V]
     fVoltageL3N: REAL;
+    // Total Real Power [W]
     fPower: REAL;
+    // Frequency [Hz]
     fFrequency: REAL;
 END_STRUCT
 END_TYPE

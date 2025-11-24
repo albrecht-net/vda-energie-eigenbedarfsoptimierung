@@ -3,7 +3,9 @@
   <DUT Name="ST_OpDataStorage" Id="{bd394b66-2859-4f20-9bfa-992f3a744597}">
     <Declaration><![CDATA[TYPE ST_OpDataStorage :
 STRUCT
+    // Currently available energy as a percent of the capacity rating
     nStateOfCharge: INT;
+    // Charge status of storage device
     eState: E_StorageChargeState;
 END_STRUCT
 END_TYPE
