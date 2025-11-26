@@ -21,13 +21,22 @@
     <Compile Include="DUTs\E_StorageChargeState.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\ST_RegMapInverter.TcDUT">
+    <Compile Include="DUTs\FroniusModbusRegisterMapping\ST_RegMapInverter.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\ST_RegMapMeter.TcDUT">
+    <Compile Include="DUTs\FroniusModbusRegisterMapping\ST_RegMapMeter.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\ST_RegMapStorage.TcDUT">
+    <Compile Include="DUTs\FroniusModbusRegisterMapping\ST_RegMapStorage.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\GridOperatingData\ST_OpDataInverter.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\GridOperatingData\ST_OpDataMeter.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\GridOperatingData\ST_OpDataStorage.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PlcTask.TcTTO">
@@ -42,6 +51,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
+    <Folder Include="DUTs\GridOperatingData" />
+    <Folder Include="DUTs\FroniusModbusRegisterMapping" />
     <Folder Include="GVLs" />
     <Folder Include="VISUs" />
     <Folder Include="POUs" />

@@ -3,90 +3,18 @@
   <POU Name="MAIN" Id="{6fe93612-4e2b-441c-92a1-cb9f7886abad}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
-    fbReadRegister: FB_MBReadRegs;
-    // power measurements of inverter
-    stInverterData: ST_RegMapInverter;
-    // power measurements of meter
-    stMeterData: ST_RegMapMeter;
-    // storage
-    stStorageData: ST_RegMapStorage;
-    
-    // Execute on rising edge
-    fbRTrig: R_TRIG;
-    
-    // Update output after modbus read
-    fbUpdateOutput: F_TRIG;
-    
-    // IP-Adress: 192.168.1.107 (WLAN), 192.168.2.7 (Ethernet), localhost on port 55502 otherwise MODBUS_TCP_PORT
-    sIPAddr: STRING := '127.0.0.1';
-    nTCPPort: UINT := 55502;
-    
-    nMode: INT := 1;
-    
-	nOpDataPower: REAL;
-	nOpDataStorageSoc: REAL;
-	nOpDataStorageState: E_StorageChargeState;
+    fbReadOpData: FB_ModbusCon := (
+                    sInverterIPAddr := '127.0.0.1',
+                    nInverterTCPPort := 5502,
+                    nInverterUnitID := 16#01,
+                    nMeterUnitID := 16#C8,
+                    tConnectionTimeout := T#10S,
+                    tConnectionCoolDown := T#10S);
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[fbRTrig();
-fbUpdateOutput();
-
-// Start reading modbus registers
-IF fbRTrig.Q THEN
-    fbRTrig.CLK := FALSE;
-    fbReadRegister.bExecute := TRUE;
-ELSE
-    fbReadRegister.bExecute := FALSE;
-END_IF
-
-// Switch between different queries
-CASE nMode OF
-    1: // Current and Power from inverter
-        fbReadRegister.nUnitID := 16#01;
-        fbReadRegister.nQuantity := 16;
-        fbReadRegister.nMBAddr := 40071;
-        fbReadRegister.cbLength := SIZEOF(stInverterData);
-        fbReadRegister.pDestAddr := ADR(stInverterData);
-        
-    2: // AC Power from meter
-        fbReadRegister.nUnitID := 16#C8;
-        fbReadRegister.nQuantity := 21;
-        fbReadRegister.nMBAddr := 40071;
-        fbReadRegister.cbLength := SIZEOF(stMeterData);
-        fbReadRegister.pDestAddr := ADR(stMeterData);
-        
-    3: // Storage
-        fbReadRegister.nUnitID := 16#01;
-        fbReadRegister.nQuantity := 4;
-        fbReadRegister.nMBAddr := 40351;
-        fbReadRegister.cbLength := SIZEOF(stStorageData);
-        fbReadRegister.pDestAddr := ADR(stStorageData);
-END_CASE
-
-fbReadRegister(
-	sIPAddr := sIPAddr,
-	nTCPPort := nTCPPort,
-	tTimeout := T#1S,
-    bBusy => fbUpdateOutput.CLK);
-
-// Testing how assigment of output values can work
-IF fbUpdateOutput.Q THEN
-    nOpDataPower := scale(nValue := stInverterData.nPower, nScaleFactor := stInverterData.nSfPower);
-    nOpDataStorageSoc := scale(nValue := stStorageData.nStateOfCharge, nScaleFactor := stStorageData.nSfStateOfCharge);
-    nOpDataStorageState := stStorageData.nState;
-END_IF]]></ST>
+      <ST><![CDATA[fbReadOpData();
+]]></ST>
     </Implementation>
-    <Method Name="scale" Id="{2842c8c4-2774-490e-ba68-41a702cea6df}">
-      <Declaration><![CDATA[METHOD PRIVATE scale : REAL
-VAR_INPUT
-    nValue: WORD;
-    nScaleFactor: WORD;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[scale := nValue * LREAL_TO_REAL(EXPT(10, UINT_TO_INT(nScaleFactor)));]]></ST>
-      </Implementation>
-    </Method>
   </POU>
 </TcPlcObject>

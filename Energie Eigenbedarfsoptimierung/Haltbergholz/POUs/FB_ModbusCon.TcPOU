@@ -336,7 +336,8 @@ nMeterCountermeasure := 0;
 nStorageCountermeasure := 0;
 nConnectionCountermeasure := 0;
 
-eReadState := WAIT_FOR_ENABLE;]]></ST>
+eReadState := WAIT_FOR_ENABLE;
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="Scale" Id="{42cdecb6-346c-42d7-8d00-085967a56f85}">
