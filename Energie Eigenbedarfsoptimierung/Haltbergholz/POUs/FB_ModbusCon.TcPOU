@@ -12,7 +12,7 @@ VAR_OUTPUT
     stMeter: ST_OpDataMeter;
     // Operating data from storage
     stStorage: ST_OpDataStorage;
-    // Connection is locked out and not available
+    // Connection is ready and not locked out
     bReady: BOOL;
 END_VAR
 VAR
@@ -64,8 +64,15 @@ END_VAR
       <ST><![CDATA[fbReadRegister(sIPAddr := _sInverterIPAddr, nTCPPort := _nInverterTCPPort, tTimeout := _tConnectionTimeout);
 fbConnectionCoolDown();
 
+// Set ready state
 bReady := eReadState <> CON_LOCKOUT;
 
+// Default operating data has not been updated this cycle
+stInverter.bOpDataIsUpdated := FALSE;
+stMeter.bOpDataIsUpdated := FALSE;
+stStorage.bOpDataIsUpdated := FALSE;
+
+// State machine
 CASE eReadState OF
     WAIT_FOR_ENABLE:
         IF bEnable AND fbConnectionCoolDown.Q THEN
@@ -122,6 +129,7 @@ CASE eReadState OF
     ASSIGN_VALUES:
         CASE eCurrentSubsystem OF
             INVERTER:
+                stInverter.bOpDataIsUpdated := TRUE;
                 stInverter.fCurrentL1 := Scale(stInverterRegisterData.nCurrentL1, stInverterRegisterData.nSfCurrent);
                 stInverter.fCurrentL2 := Scale(stInverterRegisterData.nCurrentL2, stInverterRegisterData.nSfCurrent);
                 stInverter.fCurrentL3 := Scale(stInverterRegisterData.nCurrentL3, stInverterRegisterData.nSfCurrent);
@@ -135,6 +143,7 @@ CASE eReadState OF
                 stInverter.fFrequency := Scale(stInverterRegisterData.nFrequency, stInverterRegisterData.nSfFrequency);
 
             METER:
+                stMeter.bOpDataIsUpdated := TRUE;
                 stMeter.fCurrentL1 := Scale(stMeterRegisterData.nCurrentL1, stMeterRegisterData.nSfCurrent);
                 stMeter.fCurrentL2 := Scale(stMeterRegisterData.nCurrentL2, stMeterRegisterData.nSfCurrent);
                 stMeter.fCurrentL3 := Scale(stMeterRegisterData.nCurrentL3, stMeterRegisterData.nSfCurrent);
@@ -151,6 +160,7 @@ CASE eReadState OF
                 stMeter.fFrequency := Scale(stMeterRegisterData.nFrequency, stMeterRegisterData.nSfFrequency);
 
             STORAGE:
+                stStorage.bOpDataIsUpdated := TRUE;
                 stStorage.nStateOfCharge := REAL_TO_INT(Scale(stStorageRegisterData.nStateOfCharge, stStorageRegisterData.nSfStateOfCharge));
                 stStorage.eState := stStorageRegisterData.nState;
         END_CASE

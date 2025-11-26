@@ -3,6 +3,8 @@
   <DUT Name="ST_OpDataMeter" Id="{72112f1d-8804-4a9b-bc1b-4993bae1df93}">
     <Declaration><![CDATA[TYPE ST_OpDataMeter :
 STRUCT
+    // Operating data refreshed in this cycle
+    bOpDataIsUpdated: BOOL;
     // Current Phase L1 [A]
     fCurrentL1: REAL;
     // Current Phase L2 [A]

@@ -3,6 +3,8 @@
   <DUT Name="ST_OpDataInverter" Id="{9b9ddeb3-89d4-4db1-b6c6-92d6b6b1e80c}">
     <Declaration><![CDATA[TYPE ST_OpDataInverter :
 STRUCT
+    // Operating data refreshed in this cycle
+    bOpDataIsUpdated: BOOL;
     // Current Phase L1 [A]
     fCurrentL1: REAL;
     // Current Phase L2 [A]
