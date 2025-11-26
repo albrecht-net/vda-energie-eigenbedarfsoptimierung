@@ -12,6 +12,8 @@ VAR_OUTPUT
     stMeter: ST_OpDataMeter;
     // Operating data from storage
     stStorage: ST_OpDataStorage;
+    // Connection is locked out and not available
+    bReady: BOOL;
 END_VAR
 VAR
     _sInverterIPAddr: STRING;
@@ -61,6 +63,8 @@ END_VAR
     <Implementation>
       <ST><![CDATA[fbReadRegister(sIPAddr := _sInverterIPAddr, nTCPPort := _nInverterTCPPort, tTimeout := _tConnectionTimeout);
 fbConnectionCoolDown();
+
+bReady := eReadState <> CON_LOCKOUT;
 
 CASE eReadState OF
     WAIT_FOR_ENABLE:
@@ -198,20 +202,16 @@ IF fbReadRegister.bError THEN
         16#8003: // Invalid parameters: incorrect number of registers
             CASE eCurrentSubsystem OF
                 INVERTER:
-                    fbInverterCountermeasure.CU := TRUE;
                     nInverterCountermeasure := nInverterCountermeasure + 1;
                 METER:
-                    fbMeterCountermeasure.CU := TRUE;
                     nMeterCountermeasure := nMeterCountermeasure + 1;
                 STORAGE:
-                    fbStorageCountermeasure.CU := TRUE;
                     nStorageCountermeasure := nStorageCountermeasure + 1;
             END_CASE
     
         16#8004,                                  // Modbus server error
         Global.E_TcSystemEventClass.TCPSendError, // TCP send error
         Tc2_System.E_AdsErr.CLIENT_SYNCTIMEOUT:   // Remote terminal is not responding in the specified ADS timeout
-            fbConnectionCountermeasure.CU := TRUE;
             nConnectionCountermeasure := nConnectionCountermeasure + 1;
             fbConnectionCoolDown.PT := _tConnectionCoolDown + _tConnectionCoolDown * LREAL_TO_INT(EXPT(nConnectionCountermeasure, 2));
     END_CASE
@@ -230,7 +230,7 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="ConnectionLockoutIsActive" Id="{bf05b0a2-a100-4785-9923-1a19614766ee}">
-      <Declaration><![CDATA[METHOD PUBLIC ConnectionLockoutIsActive : BOOL
+      <Declaration><![CDATA[METHOD PRIVATE ConnectionLockoutIsActive : BOOL
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF nConnectionCountermeasure > nConnectionCmBeforeLockout OR nInverterCountermeasure > nSubsystemCmBeforeLockout OR nMeterCountermeasure > nSubsystemCmBeforeLockout OR nStorageCountermeasure > nSubsystemCmBeforeLockout OR eReadState = CON_LOCKOUT THEN
