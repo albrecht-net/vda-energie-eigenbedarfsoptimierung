@@ -16,11 +16,17 @@ VAR_OUTPUT
     bReady: BOOL;
 END_VAR
 VAR
+    // IP address of the target device
     _sInverterIPAddr: STRING;
+    // Port number of the target device
     _nInverterTCPPort: UINT;
+    // Modbus RTU ID of inverter, value must be 16#FF if addressed directly via TCP/IP
     _nInverterUnitID: BYTE;
+    // Modbus RTU ID of meter, value must be 16#FF if addressed directly via TCP/IP
     _nMeterUnitID: BYTE;
+    // Timeout that may not be exceeded by execution of the ADS command
     _tConnectionTimeout: TIME;
+    // Timeout between modbus commands sent to target device
     _tConnectionCoolDown: TIME;
 
     // Modbus connection to read registers
@@ -50,13 +56,21 @@ VAR
     eCurrentSubsystem: (INVERTER, METER, STORAGE);
 END_VAR
 VAR CONSTANT
+    // Number of output registers used by stInverterRegisterData
     nInverterRegQuantity: WORD := 16;
+    // Start address of the output register used by stInverterRegisterData
     nInverterMBStartAddr: WORD := 40071;
+    // Number of output registers used by stMeterRegisterData
     nMeterRegQuantity: WORD := 21;
+    // Start address of the output register used by stMeterRegisterData
     nMeterMBStartAddr: WORD := 40071;
+    // Number of output registers used by stStorageRegisterData
     nStorageRegQuantity: WORD := 4;
+    // Start address of the output register used by stStorageRegisterData
     nStorageMBStartAddr: WORD := 40351;
+    // Number of attempted countermeasures before connection lockout (connection error)
     nConnectionCmBeforeLockout: INT := 5;
+    // Number of attempted countermeasures before connection lockout (subsystem error)
     nSubsystemCmBeforeLockout: INT := 2;
 END_VAR
 ]]></Declaration>
@@ -196,6 +210,7 @@ CASE eReadState OF
 END_CASE
 ]]></ST>
     </Implementation>
+    <Folder Name="Properties" Id="{e526952d-1a01-4e02-a2fb-614c560a061a}" />
     <Method Name="ConnectionErrorHandler" Id="{eb35efc9-f4bd-48ca-9579-f04d9ee594f3}">
       <Declaration><![CDATA[METHOD PRIVATE ConnectionErrorHandler
 ]]></Declaration>
@@ -251,42 +266,67 @@ END_IF
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="FB_Init" Id="{7814f5ef-9eb8-4cfe-966e-9c0030c1cf2b}">
-      <Declaration><![CDATA[METHOD FB_Init: BOOL
-VAR_INPUT
-    // TRUE: the retain variables are initialized (reset warm / reset cold)
-    bInitRetains: BOOL;
-    // TRUE: the instance will be copied to the copy code afterward (online change)
-    bInCopyCode: BOOL;
-    // IP address of the target device
-    sInverterIPAddr: STRING;
-    // Port number of the target device
-    nInverterTCPPort: UINT;
-    // Modbus RTU ID of inverter, value must be 16#FF if addressed directly via TCP/IP
-    nInverterUnitID: BYTE;
-    // Modbus RTU ID of meter, value must be 16#FF if addressed directly via TCP/IP
-    nMeterUnitID: BYTE;
-    // Timeout that may not be exceeded by execution of the ADS command
-    tConnectionTimeout: TIME;
-    // Timeout between modbus commands sent to target device
-    tConnectionCoolDown: TIME;
-END_VAR]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[// Assign connection parameters
-_sInverterIPAddr := sInverterIPAddr;
-_nInverterTCPPort := nInverterTCPPort;
-_nInverterUnitID := nInverterUnitID;
-_nMeterUnitID := nMeterUnitID;
-_tConnectionTimeout := tConnectionTimeout;
-_tConnectionCoolDown := tConnectionCoolDown;
-
-// Initialize connection cooldown timeout
-IF bInitRetains THEN
-    fbConnectionCoolDown.PT := tConnectionCoolDown;
-END_IF
+    <Property Name="nInverterTCPPort" Id="{0208614e-59f7-4633-83e9-f19d97c40446}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY nInverterTCPPort : UINT]]></Declaration>
+      <Get Name="Get" Id="{0751807e-b515-449a-81b0-294d4ae71c2d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[nInverterTCPPort := _nInverterTCPPort;
 ]]></ST>
-      </Implementation>
-    </Method>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{73510e41-675d-4b24-b148-178637450bd3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_nInverterTCPPort := nInverterTCPPort;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="nInverterUnitID" Id="{4b091f00-d0cf-42a0-8a80-698bd7c0cb80}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY nInverterUnitID : BYTE]]></Declaration>
+      <Get Name="Get" Id="{203f77d2-9bd0-44e9-b1f5-d0e6a98b84c1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[nInverterUnitID := _nInverterUnitID;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{13d50004-a553-4bfb-a6c8-e2e4794064b3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_nInverterUnitID := nInverterUnitID;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="nMeterUnitID" Id="{527b1d04-a12e-4bee-93ec-d9b28a6a9926}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY nMeterUnitID : BYTE]]></Declaration>
+      <Get Name="Get" Id="{a4b3b186-664a-4b6a-ac57-3ad93c32bb74}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[nMeterUnitID := _nMeterUnitID;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{3c2feef1-2f4b-477a-b581-ec4705605620}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_nMeterUnitID := nMeterUnitID;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Method Name="Reset" Id="{dcc751c1-95e6-4506-87cb-37fdf657bcaf}">
       <Declaration><![CDATA[METHOD PUBLIC Reset
 ]]></Declaration>
@@ -311,5 +351,72 @@ END_VAR
 ]]></ST>
       </Implementation>
     </Method>
+    <Property Name="sInverterIPAddr" Id="{bb6c70b4-566d-44aa-9bf4-f7634820c67a}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY sInverterIPAddr : STRING]]></Declaration>
+      <Get Name="Get" Id="{898b2f55-6363-49f6-b4cc-12a33e04db4b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sInverterIPAddr := _sInverterIPAddr;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{c27586e5-8cd9-4e3e-ac15-5a3ff0e940de}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_sInverterIPAddr := sInverterIPAddr;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tConnectionCoolDown" Id="{6f8307c1-4b4e-402e-9adb-89621f0deb8a}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY tConnectionCoolDown : TIME]]></Declaration>
+      <Get Name="Get" Id="{7e0cee8a-5fc2-457f-8bf4-bf2545934b94}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[tConnectionCoolDown := _tConnectionCoolDown;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{a4cab1d9-c121-4bcb-a3ec-859f2ad4656e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_tConnectionCoolDown := tConnectionCoolDown;
+
+// Apply connection cooldown timeout if no counter measure is active
+IF nConnectionCountermeasure = 0 AND nInverterCountermeasure = 0 AND nMeterCountermeasure = 0 AND nStorageCountermeasure = 0 THEN
+    fbConnectionCoolDown.PT := tConnectionCoolDown;
+END_IF
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tConnectionTimeout" Id="{e5048373-5545-4343-bd36-b4a6dfb3f32d}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY tConnectionTimeout : TIME]]></Declaration>
+      <Get Name="Get" Id="{1a2f3e9b-eb8a-4180-b874-494a0b9ca5aa}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[tConnectionTimeout := _tConnectionTimeout;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{afb1dd33-6454-4ce6-a3e7-ff21ccd34cf4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_tConnectionTimeout := tConnectionTimeout;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
   </POU>
 </TcPlcObject>
