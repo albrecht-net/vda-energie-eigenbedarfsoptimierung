@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_OpDataStorage" Id="{bd394b66-2859-4f20-9bfa-992f3a744597}">
+    <Declaration><![CDATA[TYPE ST_OpDataStorage :
+STRUCT
+    // Operating data refreshed in this cycle
+    bOpDataIsUpdated: BOOL;
+    // Currently available energy as a percent of the capacity rating
+    nStateOfCharge: INT;
+    // Charge status of storage device
+    eState: E_StorageChargeState;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

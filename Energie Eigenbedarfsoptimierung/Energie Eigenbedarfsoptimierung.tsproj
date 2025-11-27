@@ -1,7 +1,76 @@
 <?xml version="1.0"?>
 <TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4026.19">
+	<Translations>
+		<Text TxtId="MainEventClass_DisplayText"/>
+		<Text TxtId="F_MbConnectionError_DisplayText"/>
+		<Text TxtId="F_MbFunctionInverterError_DisplayText"/>
+		<Text TxtId="F_MbFunctionMeterError_DisplayText"/>
+		<Text TxtId="F_MbFunctionStorageError_DisplayText"/>
+		<Text TxtId="F_MbConnectionLocked_DisplayText"/>
+		<Text TxtId="M_MbOpDataIsUpdated_DisplayText"/>
+		<Text TxtId="M_MbUncatchedError_DisplayText"/>
+	</Translations>
+	<DataTypes>
+		<DataType>
+			<Name GUID="{F1B9C829-34B9-4C7B-A2B8-0902B2E8FA82}" PersistentType="true">MainControllerEventClass</Name>
+			<DisplayName TxtId=""><![CDATA[MainEventClass_DisplayText]]></DisplayName>
+			<EventId>
+				<Name Id="100">F_MbConnectionError</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbConnectionError_DisplayText]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="101">F_MbFunctionInverterError</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbFunctionInverterError_DisplayText]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="102">F_MbFunctionMeterError</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbFunctionMeterError_DisplayText]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="103">F_MbFunctionStorageError</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbFunctionStorageError_DisplayText]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="110">F_MbConnectionLocked</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbConnectionLocked_DisplayText]]></DisplayName>
+				<Severity>Error</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="200">M_MbOpDataIsUpdated</Name>
+				<DisplayName TxtId=""><![CDATA[M_MbOpDataIsUpdated_DisplayText]]></DisplayName>
+				<Severity>Verbose</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="201">M_MbUncatchedError</Name>
+				<DisplayName TxtId=""><![CDATA[M_MbUncatchedError_DisplayText]]></DisplayName>
+				<Severity>Info</Severity>
+			</EventId>
+			<Hides>
+				<Hide GUID="{439BB7A7-1D13-4303-9CAE-8C5FE2893D80}"/>
+				<Hide GUID="{FBBCEEDD-4B2A-4FC7-95C2-735407853169}"/>
+				<Hide GUID="{75365B4F-24DA-46F4-B634-4AF2FF784C64}"/>
+				<Hide GUID="{6A1E27D8-02F9-419A-824C-4E9BD8E4BF21}"/>
+				<Hide GUID="{C1B65774-7A08-4682-9A6E-75F6B8679F8D}"/>
+				<Hide GUID="{41224A6C-133B-4090-922F-625C7495880F}"/>
+				<Hide GUID="{2186C858-6B01-4585-8B59-6BCF5C0A8C35}"/>
+				<Hide GUID="{F19E98FE-EFBA-455A-A6AF-189CF439D717}"/>
+			</Hides>
+		</DataType>
+	</DataTypes>
 	<Project ProjectGUID="{BCAB6AC8-30EC-459A-B7A8-32C72CE93872}" Target64Bit="true" ShowHideConfigurations="#x3c7">
 		<System>
+			<Settings MaxCpus="8">
+				<Cpu CpuId="7"/>
+			</Settings>
+			<Licenses>
+				<Target>
+					<ManualSelect>{6952449D-F68C-49A2-ADE4-8639D85B33A4}</ManualSelect>
+				</Target>
+			</Licenses>
 			<Tasks>
 				<Task Id="3" Priority="20" CycleTime="100000" AmsPort="350" AdtTasks="true">
 					<Name>PlcTask</Name>
