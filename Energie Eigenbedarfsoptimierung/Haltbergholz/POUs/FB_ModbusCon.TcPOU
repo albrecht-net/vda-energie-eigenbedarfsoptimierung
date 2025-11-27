@@ -60,6 +60,18 @@ VAR
     eReadState: (WAIT_FOR_ENABLE, PREPARE_READ_REGS, EXECUTE_READ_REGS, WAIT_READ_REGS_FEEDBACK, ASSIGN_VALUES, SELECT_NEXT_SUBSYTEM, CON_COOL_DOWN, CON_LOCKOUT);
     // Select subsystem for request to prevent parallel requests
     eCurrentSubsystem: (INVERTER, METER, STORAGE);
+
+    // Show only events with minimum severety level
+    {attribute 'hide'}
+    _eTraceLevel: TcEventSeverity := TcEventSeverity.Warning;
+
+    fbAlarmMbConnectionError: FB_TcAlarm;
+    fbAlarmMbFunctionInverterError: FB_TcAlarm;
+    fbAlarmMbFunctionMeterError: FB_TcAlarm;
+    fbAlarmMbFunctionStorageError: FB_TcAlarm;
+    fbAlarmMbConnectionLocked: FB_TcAlarm;
+    fbMessageMbOpDataIsUpdated: FB_TcMessage;
+    fbMessageMbUncatchedError: FB_TcMessage;
 END_VAR
 VAR CONSTANT
     // Number of output registers used by stInverterRegisterData
@@ -186,6 +198,15 @@ CASE eReadState OF
         END_CASE
         eReadState := SELECT_NEXT_SUBSYTEM;
 
+        // Send message M_MbOpDataIsUpdated
+        IF fbMessageMbOpDataIsUpdated.eSeverity >= eTraceLevel THEN
+            fbMessageMbOpDataIsUpdated.ipArguments.Clear();
+            fbMessageMbOpDataIsUpdated.ipArguments.AddBool(value := stInverter.bOpDataIsUpdated);
+            fbMessageMbOpDataIsUpdated.ipArguments.AddBool(value := stMeter.bOpDataIsUpdated);
+            fbMessageMbOpDataIsUpdated.ipArguments.AddBool(value := stStorage.bOpDataIsUpdated);
+            fbMessageMbOpDataIsUpdated.Send();
+        END_IF
+
     SELECT_NEXT_SUBSYTEM:
         CASE eCurrentSubsystem OF
             INVERTER:
@@ -240,11 +261,20 @@ IF fbReadRegister.bError THEN
                 STORAGE:
                     nStorageCountermeasure := nStorageCountermeasure + 1;
             END_CASE
+            
 
         Global.E_TcSystemEventClass.TCPSendError, // TCP send error
         Tc2_System.E_AdsErr.CLIENT_SYNCTIMEOUT:   // Remote terminal is not responding in the specified ADS timeout
             nConnectionCountermeasure := nConnectionCountermeasure + 1;
             fbConnectionCoolDown.PT := tConnectionCoolDown + tConnectionCoolDown * LREAL_TO_INT(EXPT(nConnectionCountermeasure, 2));
+
+        ELSE
+            // Send message M_MbUncatchedError
+            IF fbMessageMbUncatchedError.eSeverity >= eTraceLevel THEN
+                fbMessageMbUncatchedError.ipArguments.Clear();
+                fbMessageMbUncatchedError.ipArguments.AddUDInt(value := fbReadRegister.nErrId);
+                fbMessageMbUncatchedError.Send();
+            END_IF
     END_CASE
 
 ELSE
@@ -257,6 +287,46 @@ ELSE
     // Reset connection cooldown timeout
     fbConnectionCoolDown.PT := tConnectionCoolDown;
 END_IF
+
+IF nConnectionCountermeasure > 0 AND fbAlarmMbConnectionError.eSeverity >= eTraceLevel AND NOT fbAlarmMbConnectionError.bRaised THEN
+    // Raise alarm F_MbConnectionError
+    fbAlarmMbConnectionError.ipArguments.AddUDInt(value := fbReadRegister.nErrId);
+    fbAlarmMbConnectionError.Raise();
+ELSIF nConnectionCountermeasure = 0 AND fbAlarmMbConnectionError.bRaised THEN
+    // Clear alarm F_MbConnectionError
+    fbAlarmMbConnectionError.ipArguments.Clear();
+    fbAlarmMbConnectionError.Clear();
+END_IF
+
+IF nInverterCountermeasure > 0 AND fbAlarmMbFunctionInverterError.eSeverity >= eTraceLevel AND NOT fbAlarmMbFunctionInverterError.bRaised THEN
+    // Raise alarm F_MbFunctionInverterError
+    fbAlarmMbFunctionInverterError.ipArguments.AddUDInt(value := fbReadRegister.nErrId);
+    fbAlarmMbFunctionInverterError.Raise();
+ELSIF nInverterCountermeasure = 0 AND fbAlarmMbFunctionInverterError.bRaised THEN
+    // Clear alarm F_MbFunctionInverterError
+    fbAlarmMbFunctionInverterError.ipArguments.Clear();
+    fbAlarmMbFunctionInverterError.Clear();
+END_IF
+
+IF nMeterCountermeasure > 0 AND fbAlarmMbFunctionMeterError.eSeverity >= eTraceLevel AND NOT fbAlarmMbFunctionMeterError.bRaised THEN
+    // Raise alarm F_MbFunctionMeterError
+    fbAlarmMbFunctionMeterError.ipArguments.AddUDInt(value := fbReadRegister.nErrId);
+    fbAlarmMbFunctionMeterError.Raise();
+ELSIF nMeterCountermeasure = 0 AND fbAlarmMbFunctionMeterError.bRaised THEN
+    // Clear alarm F_MbFunctionMeterError
+    fbAlarmMbFunctionMeterError.ipArguments.Clear();
+    fbAlarmMbFunctionMeterError.Clear();
+END_IF
+
+IF nStorageCountermeasure > 0 AND fbAlarmMbFunctionStorageError.eSeverity >= eTraceLevel AND NOT fbAlarmMbFunctionStorageError.bRaised THEN
+    // Raise alarm F_MbFunctionStorageError
+    fbAlarmMbFunctionStorageError.ipArguments.AddUDInt(value := fbReadRegister.nErrId);
+    fbAlarmMbFunctionStorageError.Raise();
+ELSIF nStorageCountermeasure = 0 AND fbAlarmMbFunctionStorageError.bRaised THEN
+    // Clear alarm F_MbFunctionStorageError
+    fbAlarmMbFunctionStorageError.ipArguments.Clear();
+    fbAlarmMbFunctionStorageError.Clear();
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -264,10 +334,95 @@ END_IF
       <Declaration><![CDATA[METHOD PRIVATE ConnectionLockoutIsActive : BOOL
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF nConnectionCountermeasure > nConnectionCmBeforeLockout OR nInverterCountermeasure > nSubsystemCmBeforeLockout OR nMeterCountermeasure > nSubsystemCmBeforeLockout OR nStorageCountermeasure > nSubsystemCmBeforeLockout OR eReadState = CON_LOCKOUT THEN
+        <ST><![CDATA[// Default to false, no lockout active
+ConnectionLockoutIsActive := FALSE;
+
+// Return if already in locked state
+IF eReadState = CON_LOCKOUT THEN
     ConnectionLockoutIsActive := TRUE;
-ELSE
-    ConnectionLockoutIsActive := FALSE;
+    RETURN;
+END_IF
+
+IF nConnectionCountermeasure > nConnectionCmBeforeLockout THEN
+    ConnectionLockoutIsActive := TRUE;
+    // Add reference to F_MbConnectionError as argument to F_MbConnectionLocked
+    IF fbAlarmMbConnectionLocked.eSeverity >= eTraceLevel AND NOT fbAlarmMbConnectionLocked.bRaised THEN
+        fbAlarmMbConnectionLocked.ipArguments.AddEventReferenceId(nEventId := fbAlarmMbConnectionError.nEventId);
+    END_IF
+END_IF
+
+if nInverterCountermeasure > nSubsystemCmBeforeLockout THEN
+    ConnectionLockoutIsActive := TRUE;
+    // Add reference to F_MbFunctionInverterError as argument to F_MbConnectionLocked
+    IF fbAlarmMbConnectionLocked.eSeverity >= eTraceLevel AND NOT fbAlarmMbConnectionLocked.bRaised THEN
+        fbAlarmMbConnectionLocked.ipArguments.AddEventReferenceId(nEventId := fbAlarmMbFunctionInverterError.nEventId);
+    END_IF
+END_IF
+
+if nMeterCountermeasure > nSubsystemCmBeforeLockout THEN
+    ConnectionLockoutIsActive := TRUE;
+    // Add reference to F_MbFunctionMeterError as argument to F_MbConnectionLocked
+    IF fbAlarmMbConnectionLocked.eSeverity >= eTraceLevel AND NOT fbAlarmMbConnectionLocked.bRaised THEN
+        fbAlarmMbConnectionLocked.ipArguments.AddEventReferenceId(nEventId := fbAlarmMbFunctionMeterError.nEventId);
+    END_IF
+END_IF
+
+if nStorageCountermeasure > nSubsystemCmBeforeLockout THEN
+    ConnectionLockoutIsActive := TRUE;
+    // Add reference to F_MbFunctionStorageError as argument to F_MbConnectionLocked
+    IF fbAlarmMbConnectionLocked.eSeverity >= eTraceLevel AND NOT fbAlarmMbConnectionLocked.bRaised THEN
+        fbAlarmMbConnectionLocked.ipArguments.AddEventReferenceId(nEventId := fbAlarmMbFunctionStorageError.nEventId);
+    END_IF
+END_IF
+
+IF ConnectionLockoutIsActive AND fbAlarmMbConnectionLocked.eSeverity >= eTraceLevel AND NOT fbAlarmMbConnectionLocked.bRaised THEN
+    // Raise alarm F_MbConnectionLocked
+    fbAlarmMbConnectionLocked.Raise();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="eTraceLevel" Id="{18801b62-0a1d-4b15-a681-6dc568dda570}" FolderPath="Properties\">
+      <Declaration><![CDATA[// Show only events with minimum severety level
+{attribute 'monitoring' := 'call'}
+PROPERTY eTraceLevel : Global.TcEventSeverity]]></Declaration>
+      <Get Name="Get" Id="{151d98d5-adff-4121-9726-572ac2cfec04}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eTraceLevel := _eTraceLevel;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{b3395472-f3ef-4c16-9a44-b0aedb84921e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_eTraceLevel := eTraceLevel;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="FB_Init" Id="{d1de6e2a-f58c-4b67-ae69-3ec139555bef}">
+      <Declaration><![CDATA[METHOD FB_Init: BOOL
+VAR_INPUT
+    // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInitRetains: BOOL;
+    // TRUE: the instance will be copied to the copy code afterward (online change)      
+    bInCopyCode: BOOL; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Create alarm/message instances for the event logger
+IF NOT bInCopyCode THEN
+    fbAlarmMbConnectionError.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.F_MbConnectionError, bWithConfirmation := FALSE);
+    fbAlarmMbFunctionInverterError.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.F_MbFunctionInverterError, bWithConfirmation := FALSE);
+    fbAlarmMbFunctionMeterError.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.F_MbFunctionMeterError, bWithConfirmation := FALSE);
+    fbAlarmMbFunctionStorageError.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.F_MbFunctionStorageError, bWithConfirmation := FALSE);
+    fbAlarmMbConnectionLocked.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.F_MbConnectionLocked, bWithConfirmation := FALSE);
+    fbMessageMbOpDataIsUpdated.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.M_MbOpDataIsUpdated);
+    fbMessageMbUncatchedError.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.M_MbUncatchedError);
 END_IF
 ]]></ST>
       </Implementation>
@@ -350,6 +505,10 @@ nStorageCountermeasure := 0;
 nConnectionCountermeasure := 0;
 
 eReadState := WAIT_FOR_ENABLE;
+
+// Clear alarm F_MbConnectionLocked
+fbAlarmMbConnectionLocked.Clear();
+fbAlarmMbConnectionLocked.ipArguments.Clear();
 ]]></ST>
       </Implementation>
     </Method>
