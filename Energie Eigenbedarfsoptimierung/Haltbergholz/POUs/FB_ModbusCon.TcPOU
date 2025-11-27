@@ -17,16 +17,22 @@ VAR_OUTPUT
 END_VAR
 VAR
     // IP address of the target device
+    {attribute 'hide'}
     _sInverterIPAddr: STRING;
     // Port number of the target device
+    {attribute 'hide'}
     _nInverterTCPPort: UINT;
     // Modbus RTU ID of inverter, value must be 16#FF if addressed directly via TCP/IP
+    {attribute 'hide'}
     _nInverterUnitID: BYTE;
     // Modbus RTU ID of meter, value must be 16#FF if addressed directly via TCP/IP
+    {attribute 'hide'}
     _nMeterUnitID: BYTE;
     // Timeout that may not be exceeded by execution of the ADS command
+    {attribute 'hide'}
     _tConnectionTimeout: TIME;
     // Timeout between modbus commands sent to target device
+    {attribute 'hide'}
     _tConnectionCoolDown: TIME;
 
     // Modbus connection to read registers
@@ -75,7 +81,7 @@ VAR CONSTANT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[fbReadRegister(sIPAddr := _sInverterIPAddr, nTCPPort := _nInverterTCPPort, tTimeout := _tConnectionTimeout);
+      <ST><![CDATA[fbReadRegister(sIPAddr := sInverterIPAddr, nTCPPort := nInverterTCPPort, tTimeout := tConnectionTimeout);
 fbConnectionCoolDown();
 
 // Set ready state
@@ -98,21 +104,21 @@ CASE eReadState OF
     PREPARE_READ_REGS:
         CASE eCurrentSubsystem OF
             INVERTER:
-                fbReadRegister.nUnitID := _nInverterUnitID;
+                fbReadRegister.nUnitID := nInverterUnitID;
                 fbReadRegister.nQuantity := nInverterRegQuantity;
                 fbReadRegister.nMBAddr := nInverterMBStartAddr;
                 fbReadRegister.cbLength := SIZEOF(stInverterRegisterData);
                 fbReadRegister.pDestAddr := ADR(stInverterRegisterData);
 
             METER:
-                fbReadRegister.nUnitID := _nMeterUnitID;
+                fbReadRegister.nUnitID := nMeterUnitID;
                 fbReadRegister.nQuantity := nMeterRegQuantity;
                 fbReadRegister.nMBAddr := nMeterMBStartAddr;
                 fbReadRegister.cbLength := SIZEOF(stMeterRegisterData);
                 fbReadRegister.pDestAddr := ADR(stMeterRegisterData);
 
             STORAGE:
-                fbReadRegister.nUnitID := _nInverterUnitID;
+                fbReadRegister.nUnitID := nInverterUnitID;
                 fbReadRegister.nQuantity := nStorageRegQuantity;
                 fbReadRegister.nMBAddr := nStorageMBStartAddr;
                 fbReadRegister.cbLength := SIZEOF(stStorageRegisterData);
@@ -238,7 +244,7 @@ IF fbReadRegister.bError THEN
         Global.E_TcSystemEventClass.TCPSendError, // TCP send error
         Tc2_System.E_AdsErr.CLIENT_SYNCTIMEOUT:   // Remote terminal is not responding in the specified ADS timeout
             nConnectionCountermeasure := nConnectionCountermeasure + 1;
-            fbConnectionCoolDown.PT := _tConnectionCoolDown + _tConnectionCoolDown * LREAL_TO_INT(EXPT(nConnectionCountermeasure, 2));
+            fbConnectionCoolDown.PT := tConnectionCoolDown + tConnectionCoolDown * LREAL_TO_INT(EXPT(nConnectionCountermeasure, 2));
     END_CASE
 
 ELSE
@@ -249,7 +255,7 @@ ELSE
     nConnectionCountermeasure := 0;
 
     // Reset connection cooldown timeout
-    fbConnectionCoolDown.PT := _tConnectionCoolDown;
+    fbConnectionCoolDown.PT := tConnectionCoolDown;
 END_IF
 ]]></ST>
       </Implementation>
@@ -267,7 +273,9 @@ END_IF
       </Implementation>
     </Method>
     <Property Name="nInverterTCPPort" Id="{0208614e-59f7-4633-83e9-f19d97c40446}" FolderPath="Properties\">
-      <Declaration><![CDATA[PROPERTY nInverterTCPPort : UINT]]></Declaration>
+      <Declaration><![CDATA[// IP address of the target device
+{attribute 'monitoring' := 'variable'}
+PROPERTY nInverterTCPPort : UINT]]></Declaration>
       <Get Name="Get" Id="{0751807e-b515-449a-81b0-294d4ae71c2d}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -288,7 +296,9 @@ END_VAR
       </Set>
     </Property>
     <Property Name="nInverterUnitID" Id="{4b091f00-d0cf-42a0-8a80-698bd7c0cb80}" FolderPath="Properties\">
-      <Declaration><![CDATA[PROPERTY nInverterUnitID : BYTE]]></Declaration>
+      <Declaration><![CDATA[// Modbus RTU ID of inverter, value must be 16#FF if addressed directly via TCP/IP
+{attribute 'monitoring' := 'variable'}
+PROPERTY nInverterUnitID : BYTE]]></Declaration>
       <Get Name="Get" Id="{203f77d2-9bd0-44e9-b1f5-d0e6a98b84c1}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -303,12 +313,15 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[_nInverterUnitID := nInverterUnitID;]]></ST>
+          <ST><![CDATA[_nInverterUnitID := nInverterUnitID;
+]]></ST>
         </Implementation>
       </Set>
     </Property>
     <Property Name="nMeterUnitID" Id="{527b1d04-a12e-4bee-93ec-d9b28a6a9926}" FolderPath="Properties\">
-      <Declaration><![CDATA[PROPERTY nMeterUnitID : BYTE]]></Declaration>
+      <Declaration><![CDATA[// Modbus RTU ID of meter, value must be 16#FF if addressed directly via TCP/IP
+{attribute 'monitoring' := 'variable'}
+PROPERTY nMeterUnitID : BYTE]]></Declaration>
       <Get Name="Get" Id="{a4b3b186-664a-4b6a-ac57-3ad93c32bb74}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -353,7 +366,9 @@ END_VAR
       </Implementation>
     </Method>
     <Property Name="sInverterIPAddr" Id="{bb6c70b4-566d-44aa-9bf4-f7634820c67a}" FolderPath="Properties\">
-      <Declaration><![CDATA[PROPERTY sInverterIPAddr : STRING]]></Declaration>
+      <Declaration><![CDATA[// IP address of the target device
+{attribute 'monitoring' := 'variable'}
+PROPERTY sInverterIPAddr : STRING]]></Declaration>
       <Get Name="Get" Id="{898b2f55-6363-49f6-b4cc-12a33e04db4b}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -373,7 +388,9 @@ END_VAR
       </Set>
     </Property>
     <Property Name="tConnectionCoolDown" Id="{6f8307c1-4b4e-402e-9adb-89621f0deb8a}" FolderPath="Properties\">
-      <Declaration><![CDATA[PROPERTY tConnectionCoolDown : TIME]]></Declaration>
+      <Declaration><![CDATA[// Timeout between modbus commands sent to target device
+{attribute 'monitoring' := 'call'}
+PROPERTY tConnectionCoolDown : TIME]]></Declaration>
       <Get Name="Get" Id="{7e0cee8a-5fc2-457f-8bf4-bf2545934b94}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -399,7 +416,9 @@ END_IF
       </Set>
     </Property>
     <Property Name="tConnectionTimeout" Id="{e5048373-5545-4343-bd36-b4a6dfb3f32d}" FolderPath="Properties\">
-      <Declaration><![CDATA[PROPERTY tConnectionTimeout : TIME]]></Declaration>
+      <Declaration><![CDATA[// Timeout that may not be exceeded by execution of the ADS command
+{attribute 'monitoring' := 'call'}
+PROPERTY tConnectionTimeout : TIME]]></Declaration>
       <Get Name="Get" Id="{1a2f3e9b-eb8a-4180-b874-494a0b9ca5aa}">
         <Declaration><![CDATA[VAR
 END_VAR
