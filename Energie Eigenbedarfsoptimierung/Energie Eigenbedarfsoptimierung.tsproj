@@ -1,5 +1,42 @@
 <?xml version="1.0"?>
 <TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4026.19">
+	<Translations>
+		<Text TxtId="MainEventClass_DisplayText"/>
+		<Text TxtId="F_MbConnectionError_DisplayText"/>
+		<Text TxtId="F_MbFunctionError_DisplayText"/>
+		<Text TxtId="F_MbConnectionLocked_DisplayText"/>
+	</Translations>
+	<DataTypes>
+		<DataType>
+			<Name GUID="{6A1E27D8-02F9-419A-824C-4E9BD8E4BF21}" PersistentType="true">MainControllerEventClass</Name>
+			<DisplayName TxtId=""><![CDATA[MainEventClass_DisplayText]]></DisplayName>
+			<EventId>
+				<Name Id="100">F_MbConnectionError</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbConnectionError_DisplayText]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="101">F_MbFunctionError</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbFunctionError_DisplayText]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="110">F_MbConnectionLocked</Name>
+				<DisplayName TxtId=""><![CDATA[F_MbConnectionLocked_DisplayText]]></DisplayName>
+				<Severity>Error</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="200">M_MbOpDataIsUpdated</Name>
+				<DisplayName TxtId=""><![CDATA[M_MbOpDataIsUpdated_DisplayText]]></DisplayName>
+				<Severity>Verbose</Severity>
+			</EventId>
+			<Hides>
+				<Hide GUID="{439BB7A7-1D13-4303-9CAE-8C5FE2893D80}"/>
+				<Hide GUID="{FBBCEEDD-4B2A-4FC7-95C2-735407853169}"/>
+				<Hide GUID="{75365B4F-24DA-46F4-B634-4AF2FF784C64}"/>
+			</Hides>
+		</DataType>
+	</DataTypes>
 	<Project ProjectGUID="{BCAB6AC8-30EC-459A-B7A8-32C72CE93872}" Target64Bit="true" ShowHideConfigurations="#x3c7">
 		<System>
 			<Settings MaxCpus="8">
