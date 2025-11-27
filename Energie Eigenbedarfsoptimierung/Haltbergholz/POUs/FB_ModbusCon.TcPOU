@@ -230,7 +230,8 @@ IF fbReadRegister.bError THEN
     CASE fbReadRegister.nErrId OF
         16#8001, // Modbus function not implemented
         16#8002, // Invalid address or length
-        16#8003: // Invalid parameters: incorrect number of registers
+        16#8003, // Invalid parameters: incorrect number of registers
+        16#8004: // Modbus server error
             CASE eCurrentSubsystem OF
                 INVERTER:
                     nInverterCountermeasure := nInverterCountermeasure + 1;
@@ -239,8 +240,7 @@ IF fbReadRegister.bError THEN
                 STORAGE:
                     nStorageCountermeasure := nStorageCountermeasure + 1;
             END_CASE
-    
-        16#8004,                                  // Modbus server error
+
         Global.E_TcSystemEventClass.TCPSendError, // TCP send error
         Tc2_System.E_AdsErr.CLIENT_SYNCTIMEOUT:   // Remote terminal is not responding in the specified ADS timeout
             nConnectionCountermeasure := nConnectionCountermeasure + 1;
