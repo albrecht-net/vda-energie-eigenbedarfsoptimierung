@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_CtrlDataSetpoint" Id="{bb136058-a915-4600-a67a-7a9e4a6fd7d4}">
+    <Declaration><![CDATA[TYPE ST_CtrlDataSetpoint :
+STRUCT
+    // Load setpoint for Phase L1 [0-255]
+    nLoadSetpointL1: USINT;
+    // Load setpoint for Phase L2 [0-255]
+    nLoadSetpointL2: USINT;
+    // Load setpoint for Phase L3 [0-255]
+    nLoadSetpointL3: USINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

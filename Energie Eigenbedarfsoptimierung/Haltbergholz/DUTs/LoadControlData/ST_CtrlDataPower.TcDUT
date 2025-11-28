@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_CtrlDataPower" Id="{36cd90c2-b9d7-4916-ac31-31b5442ee9e9}">
+    <Declaration><![CDATA[TYPE ST_CtrlDataPower :
+STRUCT
+    // Real Power of Phase L1 [W]
+    fPowerL1: REAL;
+    // Real Power of Phase L2 [W]
+    fPowerL2: REAL;
+    // Real Power of Phase L3 [W]
+    fPowerL3: REAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

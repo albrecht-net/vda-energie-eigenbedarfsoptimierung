@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_LoadCtrl" Id="{86ac40be-6f7e-457b-a50f-1c0741eeb0be}">
+    <Declaration><![CDATA[INTERFACE I_LoadCtrl
+]]></Declaration>
+    <Property Name="bReady" Id="{d85c3b98-5ee7-4ea3-bcf6-43d55bdb25a3}">
+      <Declaration><![CDATA[PROPERTY bReady : BOOL]]></Declaration>
+      <Get Name="Get" Id="{fff75793-b657-479c-a799-0000c3b98113}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="eTraceLevel" Id="{03d013ae-a6a4-4e27-9fe6-5b041bd9a1df}">
+      <Declaration><![CDATA[// Show only events with minimum severety level
+{attribute 'monitoring' := 'call'}
+PROPERTY eTraceLevel: Global.TcEventSeverity]]></Declaration>
+      <Get Name="Get" Id="{744fcfcb-95cb-4a94-9884-31ee79ecc251}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{a50fbca3-8b01-417a-86b0-516ad9ff5cb7}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="stLoadSetpoint" Id="{e5eefd65-9691-4c82-8abb-3737a28ac794}">
+      <Declaration><![CDATA[PROPERTY stLoadSetpoint : ST_CtrlDataSetpoint]]></Declaration>
+      <Get Name="Get" Id="{72f63399-75bb-451a-a2e3-488987d2bd2e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{0a3ccf6c-a9a1-4a4c-9903-1aa1d27ab4b4}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="stPowerActual" Id="{a60739b9-6ee1-440e-b842-c81015b635ad}">
+      <Declaration><![CDATA[PROPERTY stPowerActual : ST_CtrlDataPower]]></Declaration>
+      <Get Name="Get" Id="{0709ad5c-a181-447e-b8f7-5b72a8af5d81}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="stPowerMaximum" Id="{48753cf6-8d8e-4257-b5b4-54483ee483a8}">
+      <Declaration><![CDATA[PROPERTY stPowerMaximum : ST_CtrlDataPower]]></Declaration>
+      <Get Name="Get" Id="{421bec78-ee1e-4ff7-a0d3-613401af118a}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>
