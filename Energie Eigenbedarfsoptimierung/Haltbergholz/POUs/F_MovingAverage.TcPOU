@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="F_MovingAverage" Id="{7e17b51d-ad58-4acd-9a8f-905c2d719af0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_MovingAverage : REAL
+VAR_INPUT
+    fIn: REAL;
+END_VAR
+VAR_IN_OUT
+    aHisotry: ARRAY[*] OF REAL;
+    nCursor: INT;
+END_VAR
+VAR
+    nLower: INT;
+    nUpper: INT;
+    n: DINT;
+    fSum: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[nLower := DINT_TO_INT(LOWER_BOUND(aHisotry, 1));
+nUpper := DINT_TO_INT(UPPER_BOUND(aHisotry, 1));
+
+// Append new value to array
+aHisotry[nCursor] := fIn;
+// Move cursor for next input
+IF nCursor < nUpper - nLower + 1 THEN
+    nCursor := nCursor + 1;
+ELSE
+    nCursor := nLower;
+END_IF
+
+// Calculate average
+n := nLower;
+WHILE n <= nUpper DO
+    fSum := fSum + aHisotry[n];
+    n := n + 1;
+END_WHILE
+
+F_MovingAverage := fSum / (nUpper - nLower + 1);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

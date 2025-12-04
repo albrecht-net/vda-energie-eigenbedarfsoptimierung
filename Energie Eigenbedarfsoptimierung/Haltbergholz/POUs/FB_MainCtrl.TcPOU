@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MainCtrl" Id="{3c56fa02-7a1e-4dcd-bd9c-f2334736110f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MainCtrl
+VAR_INPUT
+    // Operating data from inverter
+    stInverter: ST_OpDataInverter;
+    // Operating data from meter
+    stMeter: ST_OpDataMeter;
+    // Operating data from storage
+    stStorage: ST_OpDataStorage;
+END_VAR
+VAR
+    aInverterHistoryPower: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nInverterHistoryCursor: INT;
+    stInverterPower: ST_CtrlDataPower;
+
+    aMeterHistoryPowerL1: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL1: INT;
+    aMeterHistoryPowerL2: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL2: INT;
+    aMeterHistoryPowerL3: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL3: INT;
+    stMeterPower: ST_CtrlDataPower;
+END_VAR
+VAR_TEMP
+    fInverterPower: REAL;
+END_VAR
+VAR CONSTANT
+    nSamplesMovingAverage: INT := 3;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF stInverter.bOpDataIsUpdated THEN
+    fInverterPower := F_MovingAverage(fIn := stInverter.fPower, aHisotry := aInverterHistoryPower, nCursor := nInverterHistoryCursor);
+    stInverterPower.fPowerL1 := fInverterPower / 3;
+    stInverterPower.fPowerL2 := fInverterPower / 3;
+    stInverterPower.fPowerL3 := fInverterPower / 3;
+END_IF
+
+IF stMeter.bOpDataIsUpdated THEN
+    stMeterPower.fPowerL1 := F_MovingAverage(fIn := stMeter.fPowerL1, aHisotry := aMeterHistoryPowerL1, nCursor := nMeterHistoryCursorPowerL1);
+    stMeterPower.fPowerL2 := F_MovingAverage(fIn := stMeter.fPowerL2, aHisotry := aMeterHistoryPowerL2, nCursor := nMeterHistoryCursorPowerL2);
+    stMeterPower.fPowerL3 := F_MovingAverage(fIn := stMeter.fPowerL3, aHisotry := aMeterHistoryPowerL3, nCursor := nMeterHistoryCursorPowerL3);
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
