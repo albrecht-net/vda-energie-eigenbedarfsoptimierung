@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_SchmittTrigger" Id="{5415db27-caf3-46b4-ab42-46bceaa0972b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SchmittTrigger
+VAR_INPUT
+    bIn: BOOL;
+END_VAR
+VAR_OUTPUT
+    bOut: BOOL;
+END_VAR
+VAR
+    // Number of oscillations for output switch before threshold reached
+    {attribute 'hide'}
+    _nLimitOscillations: INT;
+
+    // Last input stored
+    bInLast: BOOL;
+    // Count of oscollations (falling / rising edge depending on bOut) while one threshold counter is active
+    nOscillations: INT;
+    // Time threshold to switch output after falling edge of input
+    fbFallThreshold: TON;
+    // Time threshold to switch output after rising edge of input
+    fbRiseThreshold: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbFallThreshold();
+fbRiseThreshold();
+
+IF bIn <> bInLast THEN
+    // Input falling edge
+    IF NOT bIn THEN
+        fbFallThreshold.IN := TRUE;
+        fbRiseThreshold.IN := FALSE;
+
+        // Increase oscillation counter if falling edge threashold timer has not reached tFallThreshold
+        IF bOut AND NOT fbFallThreshold.Q THEN
+            nOscillations := nOscillations + 1;
+        END_IF
+
+    // Input rising edge
+    ELSIF bIn THEN
+        fbFallThreshold.IN := FALSE;
+        fbRiseThreshold.IN := TRUE;
+
+        // Increase oscillation counter if rising edge threashold timer has not reached tRiseThreshold
+        IF NOT bOut AND NOT fbRiseThreshold.Q THEN
+            nOscillations := nOscillations + 1;
+        END_IF
+    END_IF
+
+    // Store last input on change
+    bInLast := bIn;
+END_IF
+
+// Set output bit, reset threshold timer, reset oscillation counter
+IF fbFallThreshold.Q OR nOscillations >= nLimitOscillations AND bOut THEN
+    bOut := FALSE;
+    fbFallThreshold.IN := FALSE;
+    nOscillations := 0;
+ELSIF fbRiseThreshold.Q OR nOscillations >= nLimitOscillations AND NOT bOut THEN
+    bOut := TRUE;
+    fbRiseThreshold.IN := FALSE;
+    nOscillations := 0;
+END_IF
+]]></ST>
+    </Implementation>
+    <Property Name="nLimitOscillations" Id="{fed46f39-a902-4032-b67e-f208699fdedc}">
+      <Declaration><![CDATA[// Number of oscillations for output switch before threshold reached
+{attribute 'monitoring' := 'call'}
+PROPERTY nLimitOscillations : INT]]></Declaration>
+      <Get Name="Get" Id="{95ab3c5d-edef-4631-8b48-37459a89d486}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[nLimitOscillations := _nLimitOscillations;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{684e0b90-935c-4c2f-818c-03356c664adb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_nLimitOscillations := nLimitOscillations;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tFallThreshold" Id="{bcc32cd3-c8f1-4631-913d-3024989b45f9}">
+      <Declaration><![CDATA[// Time threshold to switch output after falling edge of input
+{attribute 'monitoring' := 'call'}
+PROPERTY tFallThreshold : TIME]]></Declaration>
+      <Get Name="Get" Id="{9c9c8b95-49f0-4fdf-8f5e-2d8b8eeb70cc}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[tFallThreshold := fbFallThreshold.PT;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{dc9cb97a-faf4-4a69-8bd3-78360a0713e1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbFallThreshold.PT := tFallThreshold;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tRiseThreshold" Id="{efee597b-59a7-4e11-a226-d69995658e1b}">
+      <Declaration><![CDATA[// Time threshold to switch output after rising edge of input
+{attribute 'monitoring' := 'call'}
+PROPERTY tRiseThreshold : TIME]]></Declaration>
+      <Get Name="Get" Id="{2534d35a-721e-41f4-bbe9-da077b4f7482}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[tRiseThreshold := fbRiseThreshold.PT;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{39139921-79cc-4cd0-a974-29a228eb2e7e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbRiseThreshold.PT := tRiseThreshold;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>
