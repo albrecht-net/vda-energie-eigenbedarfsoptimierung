@@ -66,7 +66,7 @@ END_IF
 ]]></ST>
     </Implementation>
     <Property Name="nLimitOscillations" Id="{fed46f39-a902-4032-b67e-f208699fdedc}">
-      <Declaration><![CDATA[// Number of oscillations for output switch before threshold reached
+      <Declaration><![CDATA[// Number of oscillations (t < threashold) required to reverse output
 {attribute 'monitoring' := 'call'}
 PROPERTY nLimitOscillations : INT]]></Declaration>
       <Get Name="Get" Id="{95ab3c5d-edef-4631-8b48-37459a89d486}">
