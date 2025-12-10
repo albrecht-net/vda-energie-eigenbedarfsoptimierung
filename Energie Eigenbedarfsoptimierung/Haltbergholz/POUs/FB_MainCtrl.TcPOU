@@ -24,6 +24,14 @@ VAR
     stMeterPower: ST_CtrlDataPower;
 
     fbStorageIsCharging: FB_SchmittTrigger;
+
+    fbSurplusL1: FB_SchmittTrigger;
+    fbSurplusL2: FB_SchmittTrigger;
+    fbSurplusL3: FB_SchmittTrigger;
+
+    // Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)
+    {attribute 'hide'}
+    _fSurplusPowerMinimum: REAL;
 END_VAR
 VAR_TEMP
     fInverterPower: REAL;
@@ -59,7 +67,111 @@ ELSE
     fbStorageIsCharging.nLimitOscillations := 3;
 END_IF
 fbStorageIsCharging(bIn := stStorage.eState = E_StorageChargeState.charging);
+
+// Surplus per phase
+IF stMeter.bOpDataIsUpdated THEN
+    fbSurplusL1.bIn := stMeterPower.fPowerL1 * -1 >= fSurplusPowerMinimum;
+    fbSurplusL2.bIn := stMeterPower.fPowerL2 * -1 >= fSurplusPowerMinimum;
+    fbSurplusL3.bIn := stMeterPower.fPowerL3 * -1 >= fSurplusPowerMinimum;
+END_IF
+
+fbSurplusL1();
+fbSurplusL2();
+fbSurplusL3();
 ]]></ST>
     </Implementation>
+    <Property Name="fSurplusPowerMinimum" Id="{bc09be05-b8e8-40da-8220-e907d3cb3576}">
+      <Declaration><![CDATA[// Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)s
+{attribute 'monitoring' := 'call'}
+PROPERTY fSurplusPowerMinimum : REAL]]></Declaration>
+      <Get Name="Get" Id="{d77d6e39-7533-406c-8877-ddc4ea9b53d6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fSurplusPowerMinimum := _fSurplusPowerMinimum;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{5533befc-5d93-4993-9c4d-1b687c1742f1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IF fSurplusPowerMinimum >= 0 THEN
+    _fSurplusPowerMinimum := fSurplusPowerMinimum;
+ELSE
+    _fSurplusPowerMinimum := 0;
+END_IF
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="nSurplusPowerLimitOscillations" Id="{c0605ce2-0f7b-48c7-8c6e-c6a0024d1991}">
+      <Declaration><![CDATA[PROPERTY nSurplusPowerLimitOscillations : INT]]></Declaration>
+      <Get Name="Get" Id="{08560576-b63f-41a8-8c1e-691aa3918e12}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{76e686c4-8e8b-48ef-b23c-ee869e1de851}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbSurplusL1.nLimitOscillations := nSurplusPowerLimitOscillations;
+fbSurplusL2.nLimitOscillations := nSurplusPowerLimitOscillations;
+fbSurplusL3.nLimitOscillations := nSurplusPowerLimitOscillations;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tSurplusPowerFallThreshold" Id="{effea2e3-0596-4702-8fd1-a696b81d1e29}">
+      <Declaration><![CDATA[PROPERTY tSurplusPowerFallThreshold : TIME]]></Declaration>
+      <Get Name="Get" Id="{63a8f150-4f5c-429e-93f2-18da3aee7f38}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{58681f1a-a207-44c7-b072-83219d7e07d4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbSurplusL1.tFallThreshold := tSurplusPowerFallThreshold;
+fbSurplusL2.tFallThreshold := tSurplusPowerFallThreshold;
+fbSurplusL3.tFallThreshold := tSurplusPowerFallThreshold;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tSurplusPowerRiseThreshold" Id="{9fe3dde6-1001-4f56-96bb-59b34555268f}">
+      <Declaration><![CDATA[PROPERTY tSurplusPowerRiseThreshold : TIME]]></Declaration>
+      <Get Name="Get" Id="{b6e1333c-1289-4c85-973c-f22c239feae9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{495b3104-6a34-49c9-9c52-32c9b9ab67f1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbSurplusL1.tRiseThreshold := tSurplusPowerRiseThreshold;
+fbSurplusL2.tRiseThreshold := tSurplusPowerRiseThreshold;
+fbSurplusL3.tRiseThreshold := tSurplusPowerRiseThreshold;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
   </POU>
 </TcPlcObject>
