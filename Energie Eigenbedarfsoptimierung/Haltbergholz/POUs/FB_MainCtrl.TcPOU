@@ -22,6 +22,8 @@ VAR
     aMeterHistoryPowerL3: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nMeterHistoryCursorPowerL3: INT;
     stMeterPower: ST_CtrlDataPower;
+
+    fbStorageIsCharging: FB_SchmittTrigger;
 END_VAR
 VAR_TEMP
     fInverterPower: REAL;
@@ -31,18 +33,32 @@ VAR CONSTANT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[IF stInverter.bOpDataIsUpdated THEN
+      <ST><![CDATA[// Inverter
+IF stInverter.bOpDataIsUpdated THEN
     fInverterPower := F_MovingAverage(fIn := stInverter.fPower, aHisotry := aInverterHistoryPower, nCursor := nInverterHistoryCursor);
     stInverterPower.fPowerL1 := fInverterPower / 3;
     stInverterPower.fPowerL2 := fInverterPower / 3;
     stInverterPower.fPowerL3 := fInverterPower / 3;
 END_IF
 
+// Meter
 IF stMeter.bOpDataIsUpdated THEN
     stMeterPower.fPowerL1 := F_MovingAverage(fIn := stMeter.fPowerL1, aHisotry := aMeterHistoryPowerL1, nCursor := nMeterHistoryCursorPowerL1);
     stMeterPower.fPowerL2 := F_MovingAverage(fIn := stMeter.fPowerL2, aHisotry := aMeterHistoryPowerL2, nCursor := nMeterHistoryCursorPowerL2);
     stMeterPower.fPowerL3 := F_MovingAverage(fIn := stMeter.fPowerL3, aHisotry := aMeterHistoryPowerL3, nCursor := nMeterHistoryCursorPowerL3);
 END_IF
+
+// Storage
+IF stStorage.nStateOfCharge > 75 THEN
+    fbStorageIsCharging.tFallThreshold := T#5M;
+    fbStorageIsCharging.tRiseThreshold := T#2M;
+    fbStorageIsCharging.nLimitOscillations := 3;
+ELSE
+    fbStorageIsCharging.tFallThreshold := T#2M;
+    fbStorageIsCharging.tRiseThreshold := T#2M;
+    fbStorageIsCharging.nLimitOscillations := 3;
+END_IF
+fbStorageIsCharging(bIn := stStorage.eState = E_StorageChargeState.charging);
 ]]></ST>
     </Implementation>
   </POU>
