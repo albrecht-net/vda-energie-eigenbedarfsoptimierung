@@ -25,9 +25,18 @@ VAR
 
     fbStorageIsCharging: FB_SchmittTrigger;
 
-    fbSurplusL1: FB_SchmittTrigger;
-    fbSurplusL2: FB_SchmittTrigger;
-    fbSurplusL3: FB_SchmittTrigger;
+    // Actual power feed to grid Phase L1 [W]
+    fSurplusPowerL1: REAL;
+    // Surplus at Phase L1
+    fbSurplusAvailableL1: FB_SchmittTrigger;
+    // Actual power feed to grid Phase L2 [W]
+    fSurplusPowerL2: REAL;
+    // Surplus at Phase L2
+    fbSurplusAvailableL2: FB_SchmittTrigger;
+    // Actual power feed to grid Phase L3 [W]
+    fSurplusPowerL3: REAL;
+    // Surplus at Phase L3
+    fbSurplusAvailableL3: FB_SchmittTrigger;
 
     // Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)
     {attribute 'hide'}
@@ -72,14 +81,19 @@ fbStorageIsCharging(bIn := fbReadOpData.stStorage.eState = E_StorageChargeState.
 
 // Surplus per phase
 IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
-    fbSurplusL1.bIn := stMeterPower.fPowerL1 * -1 >= stSurplusPowerMinimum.fPowerL1;
-    fbSurplusL2.bIn := stMeterPower.fPowerL2 * -1 >= stSurplusPowerMinimum.fPowerL2;
-    fbSurplusL3.bIn := stMeterPower.fPowerL3 * -1 >= stSurplusPowerMinimum.fPowerL3;
+    // Reverse sign of negative measurements (surplus) and store values >= 0
+    fSurplusPowerL1 := F_NormalizeSurplus(fIn := stMeterPower.fPowerL1);
+    fSurplusPowerL2 := F_NormalizeSurplus(fIn := stMeterPower.fPowerL2);
+    fSurplusPowerL3 := F_NormalizeSurplus(fIn := stMeterPower.fPowerL3);
+    // Detect change between power feed and draw to grid
+    fbSurplusAvailableL1.bIn := fSurplusPowerL1 >= stSurplusPowerMinimum.fPowerL1;
+    fbSurplusAvailableL2.bIn := fSurplusPowerL2 >= stSurplusPowerMinimum.fPowerL2;
+    fbSurplusAvailableL3.bIn := fSurplusPowerL3 >= stSurplusPowerMinimum.fPowerL3;
 END_IF
 
-fbSurplusL1();
-fbSurplusL2();
-fbSurplusL3();
+fbSurplusAvailableL1();
+fbSurplusAvailableL2();
+fbSurplusAvailableL3();
 ]]></ST>
     </Implementation>
     <Property Name="nSurplusPowerLimitOscillations" Id="{f3c81810-4901-4d49-a22a-30f4488568b9}">
@@ -97,9 +111,9 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[fbSurplusL1.nLimitOscillations := nSurplusPowerLimitOscillations;
-fbSurplusL2.nLimitOscillations := nSurplusPowerLimitOscillations;
-fbSurplusL3.nLimitOscillations := nSurplusPowerLimitOscillations;
+          <ST><![CDATA[fbSurplusAvailableL1.nLimitOscillations := nSurplusPowerLimitOscillations;
+fbSurplusAvailableL2.nLimitOscillations := nSurplusPowerLimitOscillations;
+fbSurplusAvailableL3.nLimitOscillations := nSurplusPowerLimitOscillations;
 ]]></ST>
         </Implementation>
       </Set>
@@ -152,9 +166,9 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[fbSurplusL1.tFallThreshold := tSurplusPowerFallThreshold;
-fbSurplusL2.tFallThreshold := tSurplusPowerFallThreshold;
-fbSurplusL3.tFallThreshold := tSurplusPowerFallThreshold;
+          <ST><![CDATA[fbSurplusAvailableL1.tFallThreshold := tSurplusPowerFallThreshold;
+fbSurplusAvailableL2.tFallThreshold := tSurplusPowerFallThreshold;
+fbSurplusAvailableL3.tFallThreshold := tSurplusPowerFallThreshold;
 ]]></ST>
         </Implementation>
       </Set>
@@ -174,9 +188,9 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[fbSurplusL1.tRiseThreshold := tSurplusPowerRiseThreshold;
-fbSurplusL2.tRiseThreshold := tSurplusPowerRiseThreshold;
-fbSurplusL3.tRiseThreshold := tSurplusPowerRiseThreshold;
+          <ST><![CDATA[fbSurplusAvailableL1.tRiseThreshold := tSurplusPowerRiseThreshold;
+fbSurplusAvailableL2.tRiseThreshold := tSurplusPowerRiseThreshold;
+fbSurplusAvailableL3.tRiseThreshold := tSurplusPowerRiseThreshold;
 ]]></ST>
         </Implementation>
       </Set>

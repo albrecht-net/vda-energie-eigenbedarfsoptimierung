@@ -57,6 +57,9 @@
     <Compile Include="POUs\F_MovingAverage.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\F_NormalizeSurplus.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\I_LoadCtrl.TcIO">
       <SubType>Code</SubType>
     </Compile>

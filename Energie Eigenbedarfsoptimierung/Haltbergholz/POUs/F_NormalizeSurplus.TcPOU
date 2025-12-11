@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="F_NormalizeSurplus" Id="{3820aa7f-200f-463a-a983-f5607d4ae1d4}" SpecialFunc="None">
+    <Declaration><![CDATA[// Reverse sign of negative measurements (surplus) and output values >= 0
+FUNCTION F_NormalizeSurplus : REAL
+VAR_INPUT
+    fIn: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF fIn > 0 THEN
+    // Cap any energy draw to 0
+    F_NormalizeSurplus := 0;
+ELSE
+    // Reverse surplus to positive value
+    F_NormalizeSurplus := fIn * -1;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
