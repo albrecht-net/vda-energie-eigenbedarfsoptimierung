@@ -5,13 +5,12 @@
     <CycleTime>10000</CycleTime>
     <Priority>20</Priority>
     <PouCall>
-      <Name>MAIN</Name>
+      <Name>MainCtrl</Name>
     </PouCall>
     <TaskFBGuid>{688687cf-ac50-45b4-8803-c17dae774a95}</TaskFBGuid>
     <Fb_init>{be952708-37fb-49e0-84a8-c3f6addfd47e}</Fb_init>
     <Fb_exit>{3866a742-1972-4981-b08a-00c4d73f2b0b}</Fb_exit>
     <CycleUpdate>{b6524a1a-37ef-4446-8e42-95f8d553b450}</CycleUpdate>
     <PostCycleUpdate>{52ac6546-70cd-4aea-bf81-b2f35c44b217}</PostCycleUpdate>
-    <ObjectProperties />
   </Task>
 </TcPlcObject>

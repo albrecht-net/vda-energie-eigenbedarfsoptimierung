@@ -1,0 +1,185 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="MainCtrl" Id="{6fe93612-4e2b-441c-92a1-cb9f7886abad}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MainCtrl
+VAR
+    fbReadOpData: FB_ModbusCon := (
+                    sInverterIPAddr := '127.0.0.1',
+                    nInverterTCPPort := 5502,
+                    nInverterUnitID := 16#01,
+                    nMeterUnitID := 16#C8,
+                    tConnectionTimeout := T#10S,
+                    tConnectionCoolDown := T#10S);
+
+    aInverterHistoryPower: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nInverterHistoryCursor: INT;
+    stInverterPower: ST_CtrlDataPower;
+
+    aMeterHistoryPowerL1: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL1: INT;
+    aMeterHistoryPowerL2: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL2: INT;
+    aMeterHistoryPowerL3: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL3: INT;
+    stMeterPower: ST_CtrlDataPower;
+
+    fbStorageIsCharging: FB_SchmittTrigger;
+
+    fbSurplusL1: FB_SchmittTrigger;
+    fbSurplusL2: FB_SchmittTrigger;
+    fbSurplusL3: FB_SchmittTrigger;
+
+    // Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)
+    {attribute 'hide'}
+    _stSurplusPowerMinimum: ST_CtrlDataPower;
+END_VAR
+VAR_TEMP
+    fInverterPower: REAL;
+END_VAR
+VAR CONSTANT
+    nSamplesMovingAverage: INT := 3;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbReadOpData();
+
+// Inverter
+IF fbReadOpData.stInverter.bOpDataIsUpdated THEN
+    fInverterPower := F_MovingAverage(fIn := fbReadOpData.stInverter.fPower, aHisotry := aInverterHistoryPower, nCursor := nInverterHistoryCursor);
+    stInverterPower.fPowerL1 := fInverterPower / 3;
+    stInverterPower.fPowerL2 := fInverterPower / 3;
+    stInverterPower.fPowerL3 := fInverterPower / 3;
+END_IF
+
+// Meter
+IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
+    stMeterPower.fPowerL1 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL1, aHisotry := aMeterHistoryPowerL1, nCursor := nMeterHistoryCursorPowerL1);
+    stMeterPower.fPowerL2 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL2, aHisotry := aMeterHistoryPowerL2, nCursor := nMeterHistoryCursorPowerL2);
+    stMeterPower.fPowerL3 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL3, aHisotry := aMeterHistoryPowerL3, nCursor := nMeterHistoryCursorPowerL3);
+END_IF
+
+// Storage
+IF fbReadOpData.stStorage.nStateOfCharge > 75 THEN
+    fbStorageIsCharging.tFallThreshold := T#5M;
+    fbStorageIsCharging.tRiseThreshold := T#2M;
+    fbStorageIsCharging.nLimitOscillations := 3;
+ELSE
+    fbStorageIsCharging.tFallThreshold := T#2M;
+    fbStorageIsCharging.tRiseThreshold := T#2M;
+    fbStorageIsCharging.nLimitOscillations := 3;
+END_IF
+fbStorageIsCharging(bIn := fbReadOpData.stStorage.eState = E_StorageChargeState.charging);
+
+// Surplus per phase
+IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
+    fbSurplusL1.bIn := stMeterPower.fPowerL1 * -1 >= stSurplusPowerMinimum.fPowerL1;
+    fbSurplusL2.bIn := stMeterPower.fPowerL2 * -1 >= stSurplusPowerMinimum.fPowerL2;
+    fbSurplusL3.bIn := stMeterPower.fPowerL3 * -1 >= stSurplusPowerMinimum.fPowerL3;
+END_IF
+
+fbSurplusL1();
+fbSurplusL2();
+fbSurplusL3();
+]]></ST>
+    </Implementation>
+    <Property Name="nSurplusPowerLimitOscillations" Id="{f3c81810-4901-4d49-a22a-30f4488568b9}">
+      <Declaration><![CDATA[PROPERTY nSurplusPowerLimitOscillations : INT]]></Declaration>
+      <Get Name="Get" Id="{e0da4793-488d-4e04-8881-a9c077fad17f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{924a4907-d087-4023-9314-1c67bbb65a64}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbSurplusL1.nLimitOscillations := nSurplusPowerLimitOscillations;
+fbSurplusL2.nLimitOscillations := nSurplusPowerLimitOscillations;
+fbSurplusL3.nLimitOscillations := nSurplusPowerLimitOscillations;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="stSurplusPowerMinimum" Id="{175349a6-cc75-4297-93d3-72e2c0f8e189}">
+      <Declaration><![CDATA[// Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)s
+{attribute 'monitoring' := 'call'}
+PROPERTY stSurplusPowerMinimum : REFERENCE TO ST_CtrlDataPower]]></Declaration>
+      <Get Name="Get" Id="{f861fbe1-0622-4ac5-abda-012686bbc051}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[stSurplusPowerMinimum REF= _stSurplusPowerMinimum;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{cd443d34-2d92-476d-8b99-4375c574c436}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_stSurplusPowerMinimum.fPowerL1 := stSurplusPowerMinimum.fPowerL1;
+_stSurplusPowerMinimum.fPowerL2 := stSurplusPowerMinimum.fPowerL2;
+_stSurplusPowerMinimum.fPowerL3 := stSurplusPowerMinimum.fPowerL3;
+
+RETURN;
+
+IF stSurplusPowerMinimum.fPowerL1 >= 0 THEN
+    _stSurplusPowerMinimum.fPowerL1 := stSurplusPowerMinimum.fPowerL1;
+ELSE
+    _stSurplusPowerMinimum.fPowerL1 := 0;
+END_IF
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tSurplusPowerFallThreshold" Id="{20784289-b644-407f-aacb-7105532aa7d7}">
+      <Declaration><![CDATA[PROPERTY tSurplusPowerFallThreshold : TIME]]></Declaration>
+      <Get Name="Get" Id="{04bf4f41-f64f-4417-9a94-26c942e808fb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{9b3fe5ab-1bab-4d8c-8162-3f6fc92bbf11}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbSurplusL1.tFallThreshold := tSurplusPowerFallThreshold;
+fbSurplusL2.tFallThreshold := tSurplusPowerFallThreshold;
+fbSurplusL3.tFallThreshold := tSurplusPowerFallThreshold;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="tSurplusPowerRiseThreshold" Id="{7f1592cf-e52c-47be-8922-7f9ed56e9c5b}">
+      <Declaration><![CDATA[PROPERTY tSurplusPowerRiseThreshold : TIME]]></Declaration>
+      <Get Name="Get" Id="{e39f2568-10c6-4156-aa6b-9ea17261ebd2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{7b1406ab-109f-4d94-865a-1e30cdbffe9b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fbSurplusL1.tRiseThreshold := tSurplusPowerRiseThreshold;
+fbSurplusL2.tRiseThreshold := tSurplusPowerRiseThreshold;
+fbSurplusL3.tRiseThreshold := tSurplusPowerRiseThreshold;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

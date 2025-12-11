@@ -39,13 +39,28 @@
     <Compile Include="DUTs\GridOperatingData\ST_OpDataStorage.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\LoadControlData\ST_CtrlDataPower.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\LoadControlData\ST_CtrlDataSetpoint.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\FB_ModbusCon.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\MAIN.TcPOU">
+    <Compile Include="POUs\FB_SchmittTrigger.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\F_MovingAverage.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\I_LoadCtrl.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\MainCtrl.TcPOU">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -53,6 +68,7 @@
     <Folder Include="DUTs" />
     <Folder Include="DUTs\GridOperatingData" />
     <Folder Include="DUTs\FroniusModbusRegisterMapping" />
+    <Folder Include="DUTs\LoadControlData" />
     <Folder Include="GVLs" />
     <Folder Include="VISUs" />
     <Folder Include="POUs" />
