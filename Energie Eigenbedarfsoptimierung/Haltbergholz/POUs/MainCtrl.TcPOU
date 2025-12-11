@@ -11,6 +11,9 @@ VAR
                     tConnectionTimeout := T#10S,
                     tConnectionCoolDown := T#10S);
 
+    // Load control 1
+    ipLoad: I_LoadCtrl;
+
     aInverterHistoryPower: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nInverterHistoryCursor: INT;
     stInverterPower: ST_CtrlDataPower;
@@ -25,17 +28,13 @@ VAR
 
     fbStorageIsCharging: FB_SchmittTrigger;
 
-    // Actual power feed to grid Phase L1 [W]
-    fSurplusPowerL1: REAL;
-    // Surplus at Phase L1
+    // Actual power feed to grid (>0: feed to grid, <0: draw from grid)
+    stSurplusPower: ST_CtrlDataPower;
+    // Surplus available at Phase L1
     fbSurplusAvailableL1: FB_SchmittTrigger;
-    // Actual power feed to grid Phase L2 [W]
-    fSurplusPowerL2: REAL;
-    // Surplus at Phase L2
+    // Surplus available at Phase L2
     fbSurplusAvailableL2: FB_SchmittTrigger;
-    // Actual power feed to grid Phase L3 [W]
-    fSurplusPowerL3: REAL;
-    // Surplus at Phase L3
+    // Surplus available at Phase L3
     fbSurplusAvailableL3: FB_SchmittTrigger;
 
     // Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)
@@ -81,21 +80,49 @@ fbStorageIsCharging(bIn := fbReadOpData.stStorage.eState = E_StorageChargeState.
 
 // Surplus per phase
 IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
-    // Reverse sign of negative measurements (surplus) and store values >= 0
-    fSurplusPowerL1 := F_NormalizeSurplus(fIn := stMeterPower.fPowerL1);
-    fSurplusPowerL2 := F_NormalizeSurplus(fIn := stMeterPower.fPowerL2);
-    fSurplusPowerL3 := F_NormalizeSurplus(fIn := stMeterPower.fPowerL3);
+    // Reverse sign of power measurements (>0: feed to grid, <0: draw from grid)
+    stSurplusPower.fPowerL1 := stMeterPower.fPowerL1 * -1;
+    stSurplusPower.fPowerL2 := stMeterPower.fPowerL2 * -1;
+    stSurplusPower.fPowerL3 := stMeterPower.fPowerL3 * -1;
+
+    // Generate setpoint for each load
+    ipLoad.stLoadSetpoint := GenerateSetpoint(stLoadPowerMaximum := ipLoad.stPowerMaximum);
+
     // Detect change between power feed and draw to grid
-    fbSurplusAvailableL1.bIn := fSurplusPowerL1 >= stSurplusPowerMinimum.fPowerL1;
-    fbSurplusAvailableL2.bIn := fSurplusPowerL2 >= stSurplusPowerMinimum.fPowerL2;
-    fbSurplusAvailableL3.bIn := fSurplusPowerL3 >= stSurplusPowerMinimum.fPowerL3;
+    fbSurplusAvailableL1.bIn := stSurplusPower.fPowerL1 >= stSurplusPowerMinimum.fPowerL1;
+    fbSurplusAvailableL2.bIn := stSurplusPower.fPowerL2 >= stSurplusPowerMinimum.fPowerL2;
+    fbSurplusAvailableL3.bIn := stSurplusPower.fPowerL3 >= stSurplusPowerMinimum.fPowerL3;
 END_IF
 
 fbSurplusAvailableL1();
 fbSurplusAvailableL2();
 fbSurplusAvailableL3();
-]]></ST>
+
+IF fbSurplusAvailableL1.bOut THEN
+    
+    IF ipLoad.bReady THEN
+        ipLoad.PowerUp(ePhase := E_PhaseSelect.L1);
+    ELSE
+        ipLoad.PowerDown(ePhase := E_PhaseSelect.L1);
+    END_IF
+ELSE
+    ipLoad.stLoadSetpoint.nLoadSetpointL1 := 0;
+END_IF]]></ST>
     </Implementation>
+    <Method Name="GenerateSetpoint" Id="{7c4d6669-3131-49f9-ba82-a86fe0f83fc7}">
+      <Declaration><![CDATA[// Generate ST_CtrlDataSetpoint based on ST_CtrlDataPower of the load and the current stSurplusPower 
+METHOD PRIVATE GenerateSetpoint : REFERENCE TO ST_CtrlDataSetpoint
+VAR_INPUT
+    stLoadPowerMaximum: REFERENCE TO ST_CtrlDataPower;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GenerateSetpoint.nLoadSetpointL1 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL1 / stLoadPowerMaximum.fPowerL1, 1) * 255);
+GenerateSetpoint.nLoadSetpointL2 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL2 / stLoadPowerMaximum.fPowerL2, 1) * 255);
+GenerateSetpoint.nLoadSetpointL3 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL3 / stLoadPowerMaximum.fPowerL3, 1) * 255);
+]]></ST>
+      </Implementation>
+    </Method>
     <Property Name="nSurplusPowerLimitOscillations" Id="{f3c81810-4901-4d49-a22a-30f4488568b9}">
       <Declaration><![CDATA[PROPERTY nSurplusPowerLimitOscillations : INT]]></Declaration>
       <Get Name="Get" Id="{e0da4793-488d-4e04-8881-a9c077fad17f}">
