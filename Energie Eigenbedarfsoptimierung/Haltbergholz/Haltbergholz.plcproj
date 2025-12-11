@@ -18,6 +18,9 @@
     <LibraryReferences>{de9970d5-8daa-49c1-af76-b8c4f7cc3389}</LibraryReferences>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DUTs\E_PhaseSelect.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\E_StorageChargeState.TcDUT">
       <SubType>Code</SubType>
     </Compile>
