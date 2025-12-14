@@ -14,10 +14,6 @@ VAR
     // Load control 1
     ipLoad1: I_LoadCtrl;
 
-    aInverterHistoryPower: ARRAY[1..nSamplesMovingAverage] OF REAL;
-    nInverterHistoryCursor: INT;
-    stInverterPower: ST_CtrlDataPower;
-
     aMeterHistoryPowerL1: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nMeterHistoryCursorPowerL1: INT;
     aMeterHistoryPowerL2: ARRAY[1..nSamplesMovingAverage] OF REAL;
@@ -50,14 +46,6 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[fbReadOpData();
-
-// Inverter
-IF fbReadOpData.stInverter.bOpDataIsUpdated THEN
-    fInverterPower := F_MovingAverage(fIn := fbReadOpData.stInverter.fPower, aHisotry := aInverterHistoryPower, nCursor := nInverterHistoryCursor);
-    stInverterPower.fPowerL1 := fInverterPower / 3;
-    stInverterPower.fPowerL2 := fInverterPower / 3;
-    stInverterPower.fPowerL3 := fInverterPower / 3;
-END_IF
 
 // Meter
 IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
