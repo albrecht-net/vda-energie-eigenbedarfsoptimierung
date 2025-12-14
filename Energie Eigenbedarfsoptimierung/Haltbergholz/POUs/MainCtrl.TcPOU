@@ -12,7 +12,7 @@ VAR
                     tConnectionCoolDown := T#10S);
 
     // Load control 1
-    ipLoad: I_LoadCtrl;
+    ipLoad1: I_LoadCtrl;
 
     aInverterHistoryPower: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nInverterHistoryCursor: INT;
@@ -85,8 +85,11 @@ IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
     stSurplusPower.fPowerL2 := stMeterPower.fPowerL2 * -1;
     stSurplusPower.fPowerL3 := stMeterPower.fPowerL3 * -1;
 
+    // Add the actual power used of the load to surplus (further calculations without power of load)
+    IncludeLoadToSurplus(ipLoad := ipLoad1);
+
     // Generate setpoint for each load
-    ipLoad.stLoadSetpoint := GenerateSetpoint(stLoadPowerMaximum := ipLoad.stPowerMaximum);
+    ipLoad1.stLoadSetpoint := GenerateSetpoint(stLoadPowerMaximum := ipLoad1.stPowerMaximum);
 
     // Detect change between power feed and draw to grid
     fbSurplusAvailableL1.bIn := stSurplusPower.fPowerL1 >= stSurplusPowerMinimum.fPowerL1;
@@ -98,15 +101,25 @@ fbSurplusAvailableL1();
 fbSurplusAvailableL2();
 fbSurplusAvailableL3();
 
-IF fbSurplusAvailableL1.bOut THEN
-    
-    IF ipLoad.bReady THEN
-        ipLoad.PowerUp(ePhase := E_PhaseSelect.L1);
-    ELSE
-        ipLoad.PowerDown(ePhase := E_PhaseSelect.L1);
-    END_IF
+// Enable / Disable Load 1 on phase 1
+IF fbSurplusAvailableL1.bOut AND ipLoad1.bReady THEN
+    ipLoad1.PowerUp(ePhase := E_PhaseSelect.L1);
 ELSE
-    ipLoad.stLoadSetpoint.nLoadSetpointL1 := 0;
+    ipLoad1.PowerDown(ePhase := E_PhaseSelect.L1);
+END_IF
+
+// Enable / Disable Load 1 on phase 2
+IF fbSurplusAvailableL2.bOut AND ipLoad1.bReady THEN
+    ipLoad1.PowerUp(ePhase := E_PhaseSelect.L2);
+ELSE
+    ipLoad1.PowerDown(ePhase := E_PhaseSelect.L2);
+END_IF
+
+// Enable / Disable Load 1 on phase 3
+IF fbSurplusAvailableL3.bOut AND ipLoad1.bReady THEN
+    ipLoad1.PowerUp(ePhase := E_PhaseSelect.L3);
+ELSE
+    ipLoad1.PowerDown(ePhase := E_PhaseSelect.L3);
 END_IF]]></ST>
     </Implementation>
     <Method Name="GenerateSetpoint" Id="{7c4d6669-3131-49f9-ba82-a86fe0f83fc7}">
@@ -120,6 +133,21 @@ END_VAR
         <ST><![CDATA[GenerateSetpoint.nLoadSetpointL1 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL1 / stLoadPowerMaximum.fPowerL1, 1) * 255);
 GenerateSetpoint.nLoadSetpointL2 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL2 / stLoadPowerMaximum.fPowerL2, 1) * 255);
 GenerateSetpoint.nLoadSetpointL3 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL3 / stLoadPowerMaximum.fPowerL3, 1) * 255);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="IncludeLoadToSurplus" Id="{b35a8701-4e67-491d-b086-7d0545663614}">
+      <Declaration><![CDATA[// Add the actual power used of the load to surplus
+METHOD PRIVATE IncludeLoadToSurplus
+VAR_INPUT
+    // Interface of load control
+    ipLoad: REFERENCE TO I_LoadCtrl;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stSurplusPower.fPowerL1 := stSurplusPower.fPowerL1 + ipLoad.stPowerActual.fPowerL1;
+stSurplusPower.fPowerL2 := stSurplusPower.fPowerL2 + ipLoad.stPowerActual.fPowerL2;
+stSurplusPower.fPowerL3 := stSurplusPower.fPowerL3 + ipLoad.stPowerActual.fPowerL3;
 ]]></ST>
       </Implementation>
     </Method>
