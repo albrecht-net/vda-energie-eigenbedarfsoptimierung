@@ -85,11 +85,11 @@ IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
     stSurplusPower.fPowerL2 := stMeterPower.fPowerL2 * -1;
     stSurplusPower.fPowerL3 := stMeterPower.fPowerL3 * -1;
 
-    // Add the actual power used of the load to surplus (further calculations without power of load)
+    // Add the actual power used of the loads to surplus (further calculations without used power of all load)
     IncludeLoadToSurplus(ipLoad := ipLoad1);
 
     // Generate setpoint for each load
-    ipLoad1.stLoadSetpoint := GenerateSetpoint(stLoadPowerMaximum := ipLoad1.stPowerMaximum);
+    GenerateSetpoint(ipLoad := ipLoad1);
 
     // Detect change between power feed and draw to grid
     fbSurplusAvailableL1.bIn := stSurplusPower.fPowerL1 >= stSurplusPowerMinimum.fPowerL1;
@@ -123,16 +123,17 @@ ELSE
 END_IF]]></ST>
     </Implementation>
     <Method Name="GenerateSetpoint" Id="{7c4d6669-3131-49f9-ba82-a86fe0f83fc7}">
-      <Declaration><![CDATA[// Generate ST_CtrlDataSetpoint based on ST_CtrlDataPower of the load and the current stSurplusPower 
-METHOD PRIVATE GenerateSetpoint : REFERENCE TO ST_CtrlDataSetpoint
+      <Declaration><![CDATA[// Generate and append setpoint of each phase to stLoadSetpoint of interface based on stPowerMaximum of interface and the current stSurplusPower 
+METHOD PRIVATE GenerateSetpoint
 VAR_INPUT
-    stLoadPowerMaximum: REFERENCE TO ST_CtrlDataPower;
+    // Interface of load control
+    ipLoad: REFERENCE TO I_LoadCtrl;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GenerateSetpoint.nLoadSetpointL1 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL1 / stLoadPowerMaximum.fPowerL1, 1) * 255);
-GenerateSetpoint.nLoadSetpointL2 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL2 / stLoadPowerMaximum.fPowerL2, 1) * 255);
-GenerateSetpoint.nLoadSetpointL3 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL3 / stLoadPowerMaximum.fPowerL3, 1) * 255);
+        <ST><![CDATA[ipLoad.stLoadSetpoint.nLoadSetpointL1 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL1 / ipLoad.stPowerMaximum.fPowerL1, 1) * 255);
+ipLoad.stLoadSetpoint.nLoadSetpointL2 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL2 / ipLoad.stPowerMaximum.fPowerL2, 1) * 255);
+ipLoad.stLoadSetpoint.nLoadSetpointL3 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL3 / ipLoad.stPowerMaximum.fPowerL3, 1) * 255);
 ]]></ST>
       </Implementation>
     </Method>
