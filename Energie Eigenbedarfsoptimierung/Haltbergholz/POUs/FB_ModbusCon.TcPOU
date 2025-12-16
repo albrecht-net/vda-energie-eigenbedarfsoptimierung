@@ -72,6 +72,7 @@ VAR
     fbAlarmMbConnectionLocked: FB_TcAlarm;
     fbMessageMbOpDataIsUpdated: FB_TcMessage;
     fbMessageMbUncatchedError: FB_TcMessage;
+    fbMessageMbReceivedBytesMismatch: FB_TcMessage;
 END_VAR
 VAR CONSTANT
     // Number of output registers used by stInverterRegisterData
@@ -153,6 +154,17 @@ CASE eReadState OF
             IF ConnectionLockoutIsActive() THEN
                 // Lockout modbus connection
                 eReadState := CON_LOCKOUT;
+            ELSIF fbReadRegister.cbLength <> fbReadRegister.cbRead THEN
+                // Send message M_MbReceivedBytesMismatch
+                IF fbMessageMbReceivedBytesMismatch.eSeverity >= eTraceLevel THEN
+                    fbMessageMbReceivedBytesMismatch.ipArguments.Clear();
+                    fbMessageMbReceivedBytesMismatch.ipArguments.AddBool(value := eCurrentSubsystem = INVERTER);
+                    fbMessageMbReceivedBytesMismatch.ipArguments.AddBool(value := eCurrentSubsystem = METER);
+                    fbMessageMbReceivedBytesMismatch.ipArguments.AddBool(value := eCurrentSubsystem = STORAGE);
+                    fbMessageMbReceivedBytesMismatch.Send();
+                END_IF
+                // Skip assigning values to output variable
+                eReadState := SELECT_NEXT_SUBSYTEM;
             ELSE
                 eReadState := ASSIGN_VALUES;
             END_IF
@@ -423,6 +435,7 @@ IF NOT bInCopyCode THEN
     fbAlarmMbConnectionLocked.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.F_MbConnectionLocked, bWithConfirmation := FALSE);
     fbMessageMbOpDataIsUpdated.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.M_MbOpDataIsUpdated);
     fbMessageMbUncatchedError.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.M_MbUncatchedError);
+    fbMessageMbReceivedBytesMismatch.CreateEx(stEventEntry := TC_EVENTS.MainControllerEventClass.M_MbReceivedBytesMismatch);
 END_IF
 ]]></ST>
       </Implementation>
