@@ -39,6 +39,9 @@ VAR
                                         fPowerL2 := 20,
                                         fPowerL3 := 20);
 
+    // FB for load simulation
+    fbTestLoadBlock: FB_LoadTesting;
+
     // Load control 1
     ipLoad1: I_LoadCtrl;
 
@@ -68,9 +71,17 @@ VAR CONSTANT
     // Number of samples for moving average calculation
     nSamplesMovingAverage: INT := 3;
 END_VAR
+VAR_TEMP
+    stTask: PlcTaskSystemInfo;
+END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Fetch measurement data
+      <ST><![CDATA[stTask := F_GetTaskInfo();
+IF stTask.FirstCycle THEN
+    PRG_Init();
+END_IF
+
+// Fetch measurement data
 fbReadOpData();
 
 // Battery measurement data is updated
@@ -169,6 +180,16 @@ END_VAR
         <ST><![CDATA[stSurplusPower.fPowerL1 := stSurplusPower.fPowerL1 + ipLoad.stPowerActual.fPowerL1;
 stSurplusPower.fPowerL2 := stSurplusPower.fPowerL2 + ipLoad.stPowerActual.fPowerL2;
 stSurplusPower.fPowerL3 := stSurplusPower.fPowerL3 + ipLoad.stPowerActual.fPowerL3;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PRG_Init" Id="{9e6d794c-39cd-4f82-91bf-b926778ce985}">
+      <Declaration><![CDATA[METHOD PRIVATE PRG_Init
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[ipLoad1 := fbTestLoadBlock;
 ]]></ST>
       </Implementation>
     </Method>
