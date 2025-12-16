@@ -54,11 +54,11 @@ IF bIn <> bInLast THEN
 END_IF
 
 // Set output bit, reset threshold timer, reset oscillation counter
-IF fbFallThreshold.Q OR nOscillations >= nLimitOscillations AND bOut THEN
+IF fbFallThreshold.Q OR nLimitOscillations > 0 AND nOscillations >= nLimitOscillations AND bOut THEN
     bOut := FALSE;
     fbFallThreshold.IN := FALSE;
     nOscillations := 0;
-ELSIF fbRiseThreshold.Q OR nOscillations >= nLimitOscillations AND NOT bOut THEN
+ELSIF fbRiseThreshold.Q OR nLimitOscillations > 0 AND nOscillations >= nLimitOscillations AND NOT bOut THEN
     bOut := TRUE;
     fbRiseThreshold.IN := FALSE;
     nOscillations := 0;
