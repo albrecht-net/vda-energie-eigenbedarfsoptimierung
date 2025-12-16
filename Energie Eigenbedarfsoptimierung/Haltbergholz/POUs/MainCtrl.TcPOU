@@ -11,18 +11,50 @@ VAR
                     tConnectionTimeout := T#10S,
                     tConnectionCoolDown := T#10S);
 
+    // Battery state of charge is high
+    nStorageStateOfChargeHigh: INT := 75;
+    // Schmitt trigger configuration for battery charging state while battery state of charge low
+    stStorageIsChargingTriggerPropertiesLow: ST_SchmittTriggerProperties := (
+                                        nLimitOscillations := 3,
+                                        tFallThreshold := T#5M,
+                                        tRiseThreshold := T#2M);
+    // Schmitt trigger configuration for battery charging state while battery state of charge high
+    stStorageIsChargingTriggerPropertiesHigh: ST_SchmittTriggerProperties := (
+                                        nLimitOscillations := 3,
+                                        tFallThreshold := T#2M,
+                                        tRiseThreshold := T#2M);
+    // Schmitt trigger configuration for surplus power active while battery state of charge low
+    stSurplusPowerTriggerPropertiesLow: ST_SchmittTriggerProperties := (
+                                        nLimitOscillations := 3,
+                                        tFallThreshold := T#5M,
+                                        tRiseThreshold := T#1M);
+    // Schmitt trigger configuration for surplus power active while battery state of charge high
+    stSurplusPowerTriggerPropertiesHigh: ST_SchmittTriggerProperties := (
+                                        nLimitOscillations := 3,
+                                        tFallThreshold := T#50M,
+                                        tRiseThreshold := T#1M);
+    // Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)
+    stSurplusPowerMinimum: ST_CtrlDataPower := (
+                                        fPowerL1 := 20,
+                                        fPowerL2 := 20,
+                                        fPowerL3 := 20);
+
     // Load control 1
     ipLoad1: I_LoadCtrl;
 
+    // Battery is charging
+    fbStorageIsCharging: FB_SchmittTrigger;
+
+    // Temporary Power of Phase L1 values used for moving average 
     aMeterHistoryPowerL1: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nMeterHistoryCursorPowerL1: INT;
+    // Temporary Power of Phase L2 values used for moving average 
     aMeterHistoryPowerL2: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nMeterHistoryCursorPowerL2: INT;
+    // Temporary Power of Phase L3 values used for moving average 
     aMeterHistoryPowerL3: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nMeterHistoryCursorPowerL3: INT;
     stMeterPower: ST_CtrlDataPower;
-
-    fbStorageIsCharging: FB_SchmittTrigger;
 
     // Actual power feed to grid (>0: feed to grid, <0: draw from grid)
     stSurplusPower: ST_CtrlDataPower;
@@ -32,42 +64,37 @@ VAR
     fbSurplusAvailableL2: FB_SchmittTrigger;
     // Surplus available at Phase L3
     fbSurplusAvailableL3: FB_SchmittTrigger;
-
-    // Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)
-    {attribute 'hide'}
-    _stSurplusPowerMinimum: ST_CtrlDataPower;
-END_VAR
-VAR_TEMP
-    fInverterPower: REAL;
 END_VAR
 VAR CONSTANT
+    // Number of samples for moving average calculation
     nSamplesMovingAverage: INT := 3;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[fbReadOpData();
+      <ST><![CDATA[// Fetch measurement data
+fbReadOpData();
 
-// Meter
+// Battery measurement data is updated
+IF fbReadOpData.stStorage.bOpDataIsUpdated THEN
+    IF fbReadOpData.stStorage.nStateOfCharge > 75 THEN
+        fbStorageIsCharging.stProperties := stStorageIsChargingTriggerPropertiesLow;
+    ELSE
+        fbStorageIsCharging.stProperties := stStorageIsChargingTriggerPropertiesHigh;
+    END_IF
+
+    // Detect change on battery charging state
+    fbStorageIsCharging.bIn := fbReadOpData.stStorage.eState = E_StorageChargeState.charging;
+END_IF
+
+fbStorageIsCharging();
+
+// Meter measurement data is updated
 IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
+    // Store moving average of power measured at meter
     stMeterPower.fPowerL1 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL1, aHisotry := aMeterHistoryPowerL1, nCursor := nMeterHistoryCursorPowerL1);
     stMeterPower.fPowerL2 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL2, aHisotry := aMeterHistoryPowerL2, nCursor := nMeterHistoryCursorPowerL2);
     stMeterPower.fPowerL3 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL3, aHisotry := aMeterHistoryPowerL3, nCursor := nMeterHistoryCursorPowerL3);
-END_IF
 
-// Storage
-IF fbReadOpData.stStorage.nStateOfCharge > 75 THEN
-    fbStorageIsCharging.tFallThreshold := T#5M;
-    fbStorageIsCharging.tRiseThreshold := T#2M;
-    fbStorageIsCharging.nLimitOscillations := 3;
-ELSE
-    fbStorageIsCharging.tFallThreshold := T#2M;
-    fbStorageIsCharging.tRiseThreshold := T#2M;
-    fbStorageIsCharging.nLimitOscillations := 3;
-END_IF
-fbStorageIsCharging(bIn := fbReadOpData.stStorage.eState = E_StorageChargeState.charging);
-
-// Surplus per phase
-IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
     // Reverse sign of power measurements (>0: feed to grid, <0: draw from grid)
     stSurplusPower.fPowerL1 := stMeterPower.fPowerL1 * -1;
     stSurplusPower.fPowerL2 := stMeterPower.fPowerL2 * -1;
@@ -83,6 +110,17 @@ IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
     fbSurplusAvailableL1.bIn := stSurplusPower.fPowerL1 >= stSurplusPowerMinimum.fPowerL1;
     fbSurplusAvailableL2.bIn := stSurplusPower.fPowerL2 >= stSurplusPowerMinimum.fPowerL2;
     fbSurplusAvailableL3.bIn := stSurplusPower.fPowerL3 >= stSurplusPowerMinimum.fPowerL3;
+END_IF
+
+// Set properties of surplus available trigger based on battery charging state
+IF fbStorageIsCharging.bOut THEN
+    fbSurplusAvailableL1.stProperties := stSurplusPowerTriggerPropertiesLow;
+    fbSurplusAvailableL2.stProperties := stSurplusPowerTriggerPropertiesLow;
+    fbSurplusAvailableL3.stProperties := stSurplusPowerTriggerPropertiesLow;
+ELSE
+    fbSurplusAvailableL1.stProperties := stSurplusPowerTriggerPropertiesHigh;
+    fbSurplusAvailableL2.stProperties := stSurplusPowerTriggerPropertiesHigh;
+    fbSurplusAvailableL3.stProperties := stSurplusPowerTriggerPropertiesHigh;
 END_IF
 
 fbSurplusAvailableL1();
@@ -140,104 +178,5 @@ stSurplusPower.fPowerL3 := stSurplusPower.fPowerL3 + ipLoad.stPowerActual.fPower
 ]]></ST>
       </Implementation>
     </Method>
-    <Property Name="nSurplusPowerLimitOscillations" Id="{f3c81810-4901-4d49-a22a-30f4488568b9}">
-      <Declaration><![CDATA[PROPERTY nSurplusPowerLimitOscillations : INT]]></Declaration>
-      <Get Name="Get" Id="{e0da4793-488d-4e04-8881-a9c077fad17f}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-      <Set Name="Set" Id="{924a4907-d087-4023-9314-1c67bbb65a64}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[fbSurplusAvailableL1.nLimitOscillations := nSurplusPowerLimitOscillations;
-fbSurplusAvailableL2.nLimitOscillations := nSurplusPowerLimitOscillations;
-fbSurplusAvailableL3.nLimitOscillations := nSurplusPowerLimitOscillations;
-]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
-    <Property Name="stSurplusPowerMinimum" Id="{175349a6-cc75-4297-93d3-72e2c0f8e189}">
-      <Declaration><![CDATA[// Minimum amount of power feed to grid must be exceeded to show as surplus (>=0W)s
-{attribute 'monitoring' := 'call'}
-PROPERTY stSurplusPowerMinimum : REFERENCE TO ST_CtrlDataPower]]></Declaration>
-      <Get Name="Get" Id="{f861fbe1-0622-4ac5-abda-012686bbc051}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[stSurplusPowerMinimum REF= _stSurplusPowerMinimum;
-]]></ST>
-        </Implementation>
-      </Get>
-      <Set Name="Set" Id="{cd443d34-2d92-476d-8b99-4375c574c436}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[_stSurplusPowerMinimum.fPowerL1 := stSurplusPowerMinimum.fPowerL1;
-_stSurplusPowerMinimum.fPowerL2 := stSurplusPowerMinimum.fPowerL2;
-_stSurplusPowerMinimum.fPowerL3 := stSurplusPowerMinimum.fPowerL3;
-
-RETURN;
-
-IF stSurplusPowerMinimum.fPowerL1 >= 0 THEN
-    _stSurplusPowerMinimum.fPowerL1 := stSurplusPowerMinimum.fPowerL1;
-ELSE
-    _stSurplusPowerMinimum.fPowerL1 := 0;
-END_IF
-]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
-    <Property Name="tSurplusPowerFallThreshold" Id="{20784289-b644-407f-aacb-7105532aa7d7}">
-      <Declaration><![CDATA[PROPERTY tSurplusPowerFallThreshold : TIME]]></Declaration>
-      <Get Name="Get" Id="{04bf4f41-f64f-4417-9a94-26c942e808fb}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-      <Set Name="Set" Id="{9b3fe5ab-1bab-4d8c-8162-3f6fc92bbf11}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[fbSurplusAvailableL1.tFallThreshold := tSurplusPowerFallThreshold;
-fbSurplusAvailableL2.tFallThreshold := tSurplusPowerFallThreshold;
-fbSurplusAvailableL3.tFallThreshold := tSurplusPowerFallThreshold;
-]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
-    <Property Name="tSurplusPowerRiseThreshold" Id="{7f1592cf-e52c-47be-8922-7f9ed56e9c5b}">
-      <Declaration><![CDATA[PROPERTY tSurplusPowerRiseThreshold : TIME]]></Declaration>
-      <Get Name="Get" Id="{e39f2568-10c6-4156-aa6b-9ea17261ebd2}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-      <Set Name="Set" Id="{7b1406ab-109f-4d94-865a-1e30cdbffe9b}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[fbSurplusAvailableL1.tRiseThreshold := tSurplusPowerRiseThreshold;
-fbSurplusAvailableL2.tRiseThreshold := tSurplusPowerRiseThreshold;
-fbSurplusAvailableL3.tRiseThreshold := tSurplusPowerRiseThreshold;
-]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
   </POU>
 </TcPlcObject>
