@@ -84,12 +84,23 @@ END_IF
 // Fetch measurement data
 fbReadOpData();
 
+IF NOT fbReadOpData.bReady THEN
+    fbReadOpData.bEnable := FALSE;
+    RETURN;
+ELSE
+    fbReadOpData.bEnable := TRUE;
+END_IF
+
 // Battery measurement data is updated
 IF fbReadOpData.stStorage.bOpDataIsUpdated THEN
     IF fbReadOpData.stStorage.nStateOfCharge > 75 THEN
-        fbStorageIsCharging.stProperties := stStorageIsChargingTriggerPropertiesLow;
+        fbStorageIsCharging.nLimitOscillations := stStorageIsChargingTriggerPropertiesLow.nLimitOscillations;
+        fbStorageIsCharging.tFallThreshold := stStorageIsChargingTriggerPropertiesLow.tFallThreshold;
+        fbStorageIsCharging.tRiseThreshold := stStorageIsChargingTriggerPropertiesLow.tRiseThreshold;
     ELSE
-        fbStorageIsCharging.stProperties := stStorageIsChargingTriggerPropertiesHigh;
+        fbStorageIsCharging.nLimitOscillations := stStorageIsChargingTriggerPropertiesHigh.nLimitOscillations;
+        fbStorageIsCharging.tFallThreshold := stStorageIsChargingTriggerPropertiesHigh.tFallThreshold;
+        fbStorageIsCharging.tRiseThreshold := stStorageIsChargingTriggerPropertiesHigh.tRiseThreshold;
     END_IF
 
     // Detect change on battery charging state
@@ -119,13 +130,25 @@ END_IF
 
 // Set properties of surplus available trigger based on battery charging state
 IF fbStorageIsCharging.bOut THEN
-    fbSurplusAvailableL1.stProperties := stSurplusPowerTriggerPropertiesLow;
-    fbSurplusAvailableL2.stProperties := stSurplusPowerTriggerPropertiesLow;
-    fbSurplusAvailableL3.stProperties := stSurplusPowerTriggerPropertiesLow;
+    fbSurplusAvailableL1.nLimitOscillations := stSurplusPowerTriggerPropertiesLow.nLimitOscillations;
+    fbSurplusAvailableL1.tFallThreshold := stSurplusPowerTriggerPropertiesLow.tFallThreshold;
+    fbSurplusAvailableL1.tRiseThreshold := stSurplusPowerTriggerPropertiesLow.tRiseThreshold;
+    fbSurplusAvailableL2.nLimitOscillations := stSurplusPowerTriggerPropertiesLow.nLimitOscillations;
+    fbSurplusAvailableL2.tFallThreshold := stSurplusPowerTriggerPropertiesLow.tFallThreshold;
+    fbSurplusAvailableL2.tRiseThreshold := stSurplusPowerTriggerPropertiesLow.tRiseThreshold;
+    fbSurplusAvailableL3.nLimitOscillations := stSurplusPowerTriggerPropertiesLow.nLimitOscillations;
+    fbSurplusAvailableL3.tFallThreshold := stSurplusPowerTriggerPropertiesLow.tFallThreshold;
+    fbSurplusAvailableL3.tRiseThreshold := stSurplusPowerTriggerPropertiesLow.tRiseThreshold;
 ELSE
-    fbSurplusAvailableL1.stProperties := stSurplusPowerTriggerPropertiesHigh;
-    fbSurplusAvailableL2.stProperties := stSurplusPowerTriggerPropertiesHigh;
-    fbSurplusAvailableL3.stProperties := stSurplusPowerTriggerPropertiesHigh;
+    fbSurplusAvailableL1.nLimitOscillations := stSurplusPowerTriggerPropertiesHigh.nLimitOscillations;
+    fbSurplusAvailableL1.tFallThreshold := stSurplusPowerTriggerPropertiesHigh.tFallThreshold;
+    fbSurplusAvailableL1.tRiseThreshold := stSurplusPowerTriggerPropertiesHigh.tRiseThreshold;
+    fbSurplusAvailableL2.nLimitOscillations := stSurplusPowerTriggerPropertiesHigh.nLimitOscillations;
+    fbSurplusAvailableL2.tFallThreshold := stSurplusPowerTriggerPropertiesHigh.tFallThreshold;
+    fbSurplusAvailableL2.tRiseThreshold := stSurplusPowerTriggerPropertiesHigh.tRiseThreshold;
+    fbSurplusAvailableL3.nLimitOscillations := stSurplusPowerTriggerPropertiesHigh.nLimitOscillations;
+    fbSurplusAvailableL3.tFallThreshold := stSurplusPowerTriggerPropertiesHigh.tFallThreshold;
+    fbSurplusAvailableL3.tRiseThreshold := stSurplusPowerTriggerPropertiesHigh.tRiseThreshold;
 END_IF
 
 fbSurplusAvailableL1();
