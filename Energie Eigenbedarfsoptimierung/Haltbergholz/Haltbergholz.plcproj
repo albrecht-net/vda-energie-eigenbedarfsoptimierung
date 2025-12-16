@@ -48,6 +48,9 @@
     <Compile Include="DUTs\LoadControlData\ST_CtrlDataSetpoint.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\Properties\ST_SchmittTriggerProperties.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
@@ -75,6 +78,7 @@
     <Folder Include="DUTs\GridOperatingData" />
     <Folder Include="DUTs\FroniusModbusRegisterMapping" />
     <Folder Include="DUTs\LoadControlData" />
+    <Folder Include="DUTs\Properties" />
     <Folder Include="GVLs" />
     <Folder Include="VISUs" />
     <Folder Include="POUs" />

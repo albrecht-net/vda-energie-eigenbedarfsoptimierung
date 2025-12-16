@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_SchmittTriggerProperties" Id="{0792c3b4-07f9-4d62-ba3d-9eb0c9ab6628}">
+    <Declaration><![CDATA[TYPE ST_SchmittTriggerProperties :
+STRUCT
+    // Number of oscillations (t < threashold) required to reverse output
+    nLimitOscillations: INT;
+    // Time threshold to switch output after falling edge of input
+    tFallThreshold: TIME;
+    // Time threshold to switch output after rising edge of input
+    tRiseThreshold: TIME;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
