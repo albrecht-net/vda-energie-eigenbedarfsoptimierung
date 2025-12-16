@@ -9,6 +9,7 @@ VAR
 
     _bReady: BOOL;
     _stSetpoint: ST_CtrlDataSetpoint;
+    _stPowerActual: ST_CtrlDataPower;
     _stPowerMaximum: ST_CtrlDataPower;
     _stPowerMinimum: ST_CtrlDataPower;
 END_VAR
@@ -115,7 +116,7 @@ PROPERTY stLoadSetpoint : REFERENCE TO ST_CtrlDataSetpoint
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[stLoadSetpoint := _stSetpoint;
+          <ST><![CDATA[stLoadSetpoint REF= _stSetpoint;
 ]]></ST>
         </Implementation>
       </Get>
@@ -141,23 +142,24 @@ END_VAR
           <ST><![CDATA[// Calculate actual power using stPowerMaximum and stLoadSetpoint. Power will always be higher than stPowerMinimum
  
 IF bL1Powered THEN
-    stPowerActual.fPowerL1 := MAX(stPowerMaximum.fPowerL1 * stLoadSetpoint.nLoadSetpointL1 / 255, stPowerMinimum.fPowerL1);
+    _stPowerActual.fPowerL1 := MAX(stPowerMaximum.fPowerL1 * stLoadSetpoint.nLoadSetpointL1 / 255, stPowerMinimum.fPowerL1);
 ELSE
-    stPowerActual.fPowerL1 := 0;
+    _stPowerActual.fPowerL1 := 0;
 END_IF
 
 IF bL2Powered THEN
-    stPowerActual.fPowerL2 := MAX(stPowerMaximum.fPowerL2 * stLoadSetpoint.nLoadSetpointL2 / 255, stPowerMinimum.fPowerL2);
+    _stPowerActual.fPowerL2 := MAX(stPowerMaximum.fPowerL2 * stLoadSetpoint.nLoadSetpointL2 / 255, stPowerMinimum.fPowerL2);
 ELSE
-    stPowerActual.fPowerL2 := 0;
+    _stPowerActual.fPowerL2 := 0;
 END_IF
 
 IF bL3Powered THEN
-    stPowerActual.fPowerL3 := MAX(stPowerMaximum.fPowerL3 * stLoadSetpoint.nLoadSetpointL3 / 255, stPowerMinimum.fPowerL3);
+    _stPowerActual.fPowerL3 := MAX(stPowerMaximum.fPowerL3 * stLoadSetpoint.nLoadSetpointL3 / 255, stPowerMinimum.fPowerL3);
 ELSE
-    stPowerActual.fPowerL3 := 0;
+    _stPowerActual.fPowerL3 := 0;
 END_IF
-]]></ST>
+
+stPowerActual REF= _stPowerActual;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -170,7 +172,7 @@ PROPERTY stPowerMaximum : REFERENCE TO ST_CtrlDataPower
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[stPowerMaximum := _stPowerMaximum;
+          <ST><![CDATA[stPowerMaximum REF= _stPowerMaximum;
 ]]></ST>
         </Implementation>
       </Get>
@@ -184,7 +186,7 @@ PROPERTY stPowerMinimum : REFERENCE TO ST_CtrlDataPower
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[stPowerMinimum := _stPowerMinimum;
+          <ST><![CDATA[stPowerMinimum REF= _stPowerMinimum;
 ]]></ST>
         </Implementation>
       </Get>
