@@ -54,7 +54,6 @@ VAR
     // Temporary Power of Phase L3 values used for moving average 
     aMeterHistoryPowerL3: ARRAY[1..nSamplesMovingAverage] OF REAL;
     nMeterHistoryCursorPowerL3: INT;
-    stMeterPower: ST_CtrlDataPower;
 
     // Actual power feed to grid (>0: feed to grid, <0: draw from grid)
     stSurplusPower: ST_CtrlDataPower;
@@ -90,15 +89,10 @@ fbStorageIsCharging();
 
 // Meter measurement data is updated
 IF fbReadOpData.stMeter.bOpDataIsUpdated THEN
-    // Store moving average of power measured at meter
-    stMeterPower.fPowerL1 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL1, aHisotry := aMeterHistoryPowerL1, nCursor := nMeterHistoryCursorPowerL1);
-    stMeterPower.fPowerL2 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL2, aHisotry := aMeterHistoryPowerL2, nCursor := nMeterHistoryCursorPowerL2);
-    stMeterPower.fPowerL3 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL3, aHisotry := aMeterHistoryPowerL3, nCursor := nMeterHistoryCursorPowerL3);
-
-    // Reverse sign of power measurements (>0: feed to grid, <0: draw from grid)
-    stSurplusPower.fPowerL1 := stMeterPower.fPowerL1 * -1;
-    stSurplusPower.fPowerL2 := stMeterPower.fPowerL2 * -1;
-    stSurplusPower.fPowerL3 := stMeterPower.fPowerL3 * -1;
+    // Get moving average of power measured at meter and reverse sign (>0: feed to grid, <0: draw from grid)
+    stSurplusPower.fPowerL1 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL1, aHisotry := aMeterHistoryPowerL1, nCursor := nMeterHistoryCursorPowerL1) * -1;
+    stSurplusPower.fPowerL2 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL2, aHisotry := aMeterHistoryPowerL2, nCursor := nMeterHistoryCursorPowerL2) * -1;
+    stSurplusPower.fPowerL3 := F_MovingAverage(fIn := fbReadOpData.stMeter.fPowerL3, aHisotry := aMeterHistoryPowerL3, nCursor := nMeterHistoryCursorPowerL3) * -1;
 
     // Add the actual power used of the loads to surplus (further calculations without used power of all load)
     IncludeLoadToSurplus(ipLoad := ipLoad1);
