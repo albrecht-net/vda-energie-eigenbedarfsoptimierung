@@ -7,11 +7,11 @@ VAR
     bL2Powered: BOOL;
     bL3Powered: BOOL;
 
-    _bReady: BOOL;
+    _bReady: BOOL := TRUE;
     _stSetpoint: ST_CtrlDataSetpoint;
     _stPowerActual: ST_CtrlDataPower;
-    _stPowerMaximum: ST_CtrlDataPower;
-    _stPowerMinimum: ST_CtrlDataPower;
+    _stPowerMaximum: ST_CtrlDataPower := (fPowerL1 := 200, fPowerL2 := 200, fPowerL3 := 200);
+    _stPowerMinimum: ST_CtrlDataPower := (fPowerL1 := 10, fPowerL2 := 10, fPowerL3 := 10);
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -19,6 +19,7 @@ END_VAR
     </Implementation>
     <Property Name="bReady" Id="{4f5f1af6-df8b-4534-801c-145790891289}">
       <Declaration><![CDATA[(* True if load is ready to powered on*)
+{attribute 'monitoring' := 'variable'}
 PROPERTY bReady : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{d7174199-ca4f-4cd5-a292-2eb9d178f99a}">
@@ -132,6 +133,7 @@ END_VAR
     </Property>
     <Property Name="stPowerActual" Id="{1b3afd0d-b5fa-40d1-8371-77e397df6a25}">
       <Declaration><![CDATA[(* Actual power used from load*)
+{attribute 'monitoring' := 'variable'}
 PROPERTY stPowerActual : REFERENCE TO ST_CtrlDataPower
 ]]></Declaration>
       <Get Name="Get" Id="{54d72f31-8042-48d3-9f52-29b25d3cb432}">
@@ -165,6 +167,7 @@ stPowerActual REF= _stPowerActual;]]></ST>
     </Property>
     <Property Name="stPowerMaximum" Id="{804d38a8-307a-4eec-a520-7d50105c1c24}">
       <Declaration><![CDATA[(* Minimum power on lowest setpoint*)
+{attribute 'monitoring' := 'variable'}
 PROPERTY stPowerMaximum : REFERENCE TO ST_CtrlDataPower
 ]]></Declaration>
       <Get Name="Get" Id="{26e5e729-4c73-4839-b72d-a8647cfa16de}">
@@ -179,6 +182,7 @@ END_VAR
     </Property>
     <Property Name="stPowerMinimum" Id="{70fca240-1d50-4330-b279-804252b98eda}">
       <Declaration><![CDATA[(* Maxmimum power on highest setpoint*)
+{attribute 'monitoring' := 'variable'}
 PROPERTY stPowerMinimum : REFERENCE TO ST_CtrlDataPower
 ]]></Declaration>
       <Get Name="Get" Id="{f009614a-3d1b-4be8-8e5a-b3659a2ff51f}">
