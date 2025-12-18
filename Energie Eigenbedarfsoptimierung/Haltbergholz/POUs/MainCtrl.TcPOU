@@ -151,9 +151,23 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[ipLoad.stLoadSetpoint.nLoadSetpointL1 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL1 / ipLoad.stPowerMaximum.fPowerL1, 1) * 255);
-ipLoad.stLoadSetpoint.nLoadSetpointL2 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL2 / ipLoad.stPowerMaximum.fPowerL2, 1) * 255);
-ipLoad.stLoadSetpoint.nLoadSetpointL3 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL3 / ipLoad.stPowerMaximum.fPowerL3, 1) * 255);
+        <ST><![CDATA[IF ipLoad.stPowerMaximum.fPowerL1 <= 0 THEN
+    ipLoad.stLoadSetpoint.nLoadSetpointL1 := 0;
+ELSE
+    ipLoad.stLoadSetpoint.nLoadSetpointL1 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL1 / ipLoad.stPowerMaximum.fPowerL1, 1) * 255);
+END_IF
+
+IF ipLoad.stPowerMaximum.fPowerL2 <= 0 THEN
+    ipLoad.stLoadSetpoint.nLoadSetpointL2 := 0;
+ELSE
+    ipLoad.stLoadSetpoint.nLoadSetpointL2 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL2 / ipLoad.stPowerMaximum.fPowerL2, 1) * 255);
+END_IF
+
+IF ipLoad.stPowerMaximum.fPowerL3 <= 0 THEN
+    ipLoad.stLoadSetpoint.nLoadSetpointL3 := 0;
+ELSE
+    ipLoad.stLoadSetpoint.nLoadSetpointL3 := REAL_TO_USINT(LIMIT(0, stSurplusPower.fPowerL3 / ipLoad.stPowerMaximum.fPowerL3, 1) * 255);
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
