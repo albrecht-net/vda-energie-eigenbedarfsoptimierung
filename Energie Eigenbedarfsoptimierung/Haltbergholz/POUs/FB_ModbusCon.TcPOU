@@ -198,9 +198,9 @@ CASE eReadState OF
                 stMeter.fVoltageL2N := Scale(stMeterRegisterData.nVoltageL2N, stMeterRegisterData.nSfVoltage);
                 stMeter.fVoltageL3N := Scale(stMeterRegisterData.nVoltageL3N, stMeterRegisterData.nSfVoltage);
                 stMeter.fPower := Scale(stMeterRegisterData.nPower, stMeterRegisterData.nSfPower);
-                stMeter.fPowerL1 := Scale(stMeterRegisterData.nPowerL1, stMeterRegisterData.nSfPower);
-                stMeter.fPowerL2 := Scale(stMeterRegisterData.nPowerL2, stMeterRegisterData.nSfPower);
-                stMeter.fPowerL3 := Scale(stMeterRegisterData.nPowerL3, stMeterRegisterData.nSfPower);
+                stMeter.fPowerL1 := Scale(stMeterRegisterData.nPowerL1, stMeterRegisterData.nSfPower) - 100;
+                stMeter.fPowerL2 := Scale(stMeterRegisterData.nPowerL2, stMeterRegisterData.nSfPower) - 100;
+                stMeter.fPowerL3 := Scale(stMeterRegisterData.nPowerL3, stMeterRegisterData.nSfPower) - 100;
                 stMeter.fFrequency := Scale(stMeterRegisterData.nFrequency, stMeterRegisterData.nSfFrequency);
 
             STORAGE:
