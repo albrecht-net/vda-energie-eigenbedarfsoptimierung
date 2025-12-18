@@ -9,10 +9,11 @@
 		<Text TxtId="F_MbConnectionLocked_DisplayText"/>
 		<Text TxtId="M_MbOpDataIsUpdated_DisplayText"/>
 		<Text TxtId="M_MbUncatchedError_DisplayText"/>
+		<Text TxtId="M_MbReceivedBytesMismatch_DisplayText"/>
 	</Translations>
 	<DataTypes>
 		<DataType>
-			<Name GUID="{F1B9C829-34B9-4C7B-A2B8-0902B2E8FA82}" PersistentType="true">MainControllerEventClass</Name>
+			<Name GUID="{8329E497-6167-4CAB-B25B-B2BA63EAC3A3}" PersistentType="true">MainControllerEventClass</Name>
 			<DisplayName TxtId=""><![CDATA[MainEventClass_DisplayText]]></DisplayName>
 			<EventId>
 				<Name Id="100">F_MbConnectionError</Name>
@@ -49,6 +50,11 @@
 				<DisplayName TxtId=""><![CDATA[M_MbUncatchedError_DisplayText]]></DisplayName>
 				<Severity>Info</Severity>
 			</EventId>
+			<EventId>
+				<Name Id="202">M_MbReceivedBytesMismatch</Name>
+				<DisplayName TxtId=""><![CDATA[M_MbReceivedBytesMismatch_DisplayText]]></DisplayName>
+				<Severity>Info</Severity>
+			</EventId>
 			<Hides>
 				<Hide GUID="{439BB7A7-1D13-4303-9CAE-8C5FE2893D80}"/>
 				<Hide GUID="{FBBCEEDD-4B2A-4FC7-95C2-735407853169}"/>
@@ -58,6 +64,7 @@
 				<Hide GUID="{41224A6C-133B-4090-922F-625C7495880F}"/>
 				<Hide GUID="{2186C858-6B01-4585-8B59-6BCF5C0A8C35}"/>
 				<Hide GUID="{F19E98FE-EFBA-455A-A6AF-189CF439D717}"/>
+				<Hide GUID="{F1B9C829-34B9-4C7B-A2B8-0902B2E8FA82}"/>
 			</Hides>
 		</DataType>
 	</DataTypes>
