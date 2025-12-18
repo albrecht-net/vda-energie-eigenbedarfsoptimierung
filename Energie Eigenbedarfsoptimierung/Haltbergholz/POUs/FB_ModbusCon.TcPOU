@@ -134,7 +134,7 @@ CASE eReadState OF
                 fbReadRegister.nUnitID := nInverterUnitID;
                 fbReadRegister.nQuantity := nStorageRegQuantity;
                 fbReadRegister.nMBAddr := nStorageMBStartAddr;
-                fbReadRegister.cbLength := SIZEOF(stStorageRegisterData);
+                fbReadRegister.cbLength := SIZEOF(stStorageRegisterData) - 2;
                 fbReadRegister.pDestAddr := ADR(stStorageRegisterData);
         END_CASE
 
