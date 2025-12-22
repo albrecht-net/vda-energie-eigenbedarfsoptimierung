@@ -82,7 +82,7 @@ END_IF
 
 // Battery measurement data is updated
 IF fbReadOpData.stStorage.bOpDataIsUpdated THEN
-    IF fbReadOpData.stStorage.nStateOfCharge > 75 THEN
+    IF fbReadOpData.stStorage.nStateOfCharge > nStorageStateOfChargeHigh THEN
         fbStorageIsCharging.nLimitOscillations := stStorageIsChargingTriggerPropertiesLow.nLimitOscillations;
         fbStorageIsCharging.tFallThreshold := stStorageIsChargingTriggerPropertiesLow.tFallThreshold;
         fbStorageIsCharging.tRiseThreshold := stStorageIsChargingTriggerPropertiesLow.tRiseThreshold;
@@ -163,7 +163,8 @@ IF fbSurplusAvailableL3.bOut AND ipLoad1.bReady THEN
     ipLoad1.PowerUp(ePhase := E_PhaseSelect.L3);
 ELSE
     ipLoad1.PowerDown(ePhase := E_PhaseSelect.L3);
-END_IF]]></ST>
+END_IF
+]]></ST>
     </Implementation>
     <Method Name="GenerateSetpoint" Id="{7c4d6669-3131-49f9-ba82-a86fe0f83fc7}">
       <Declaration><![CDATA[// Generate and append setpoint of each phase to stLoadSetpoint of interface based on stPowerMaximum of interface and the current stSurplusPower 
