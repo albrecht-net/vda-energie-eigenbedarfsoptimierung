@@ -11,6 +11,32 @@ VAR
                     tConnectionTimeout := T#10S,
                     tConnectionCoolDown := T#10S);
 
+    // Load control 1
+    ipLoad1: I_LoadCtrl;
+
+    // Battery is charging
+    fbStorageIsCharging: FB_SchmittTrigger;
+
+    // Temporary Power of Phase L1 values used for moving average 
+    aMeterHistoryPowerL1: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL1: INT;
+    // Temporary Power of Phase L2 values used for moving average 
+    aMeterHistoryPowerL2: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL2: INT;
+    // Temporary Power of Phase L3 values used for moving average 
+    aMeterHistoryPowerL3: ARRAY[1..nSamplesMovingAverage] OF REAL;
+    nMeterHistoryCursorPowerL3: INT;
+
+    // Actual power feed to grid (>0: feed to grid, <0: draw from grid)
+    stSurplusPower: ST_CtrlDataPower;
+    // Surplus available at Phase L1
+    fbSurplusAvailableL1: FB_SchmittTrigger;
+    // Surplus available at Phase L2
+    fbSurplusAvailableL2: FB_SchmittTrigger;
+    // Surplus available at Phase L3
+    fbSurplusAvailableL3: FB_SchmittTrigger;
+END_VAR
+VAR PERSISTENT
     // Battery state of charge is high
     nStorageStateOfChargeHigh: INT := 75;
     // Schmitt trigger configuration for battery charging state while battery state of charge low
@@ -38,31 +64,6 @@ VAR
                                         fPowerL1 := 20,
                                         fPowerL2 := 20,
                                         fPowerL3 := 20);
-
-    // Load control 1
-    ipLoad1: I_LoadCtrl;
-
-    // Battery is charging
-    fbStorageIsCharging: FB_SchmittTrigger;
-
-    // Temporary Power of Phase L1 values used for moving average 
-    aMeterHistoryPowerL1: ARRAY[1..nSamplesMovingAverage] OF REAL;
-    nMeterHistoryCursorPowerL1: INT;
-    // Temporary Power of Phase L2 values used for moving average 
-    aMeterHistoryPowerL2: ARRAY[1..nSamplesMovingAverage] OF REAL;
-    nMeterHistoryCursorPowerL2: INT;
-    // Temporary Power of Phase L3 values used for moving average 
-    aMeterHistoryPowerL3: ARRAY[1..nSamplesMovingAverage] OF REAL;
-    nMeterHistoryCursorPowerL3: INT;
-
-    // Actual power feed to grid (>0: feed to grid, <0: draw from grid)
-    stSurplusPower: ST_CtrlDataPower;
-    // Surplus available at Phase L1
-    fbSurplusAvailableL1: FB_SchmittTrigger;
-    // Surplus available at Phase L2
-    fbSurplusAvailableL2: FB_SchmittTrigger;
-    // Surplus available at Phase L3
-    fbSurplusAvailableL3: FB_SchmittTrigger;
 END_VAR
 VAR CONSTANT
     // Number of samples for moving average calculation

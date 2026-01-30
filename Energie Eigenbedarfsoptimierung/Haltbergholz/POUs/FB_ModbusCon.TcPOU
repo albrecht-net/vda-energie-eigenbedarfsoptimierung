@@ -422,7 +422,7 @@ END_VAR
 VAR_INPUT
     // TRUE: the retain variables are initialized (reset warm / reset cold)
     bInitRetains: BOOL;
-    // TRUE: the instance will be copied to the copy code afterward (online change)      
+    // TRUE: the instance will be copied to the copy code afterward (online change)
     bInCopyCode: BOOL; 
 END_VAR]]></Declaration>
       <Implementation>
